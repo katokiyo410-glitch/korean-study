@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="韓国語">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#6C63FF">
+<title>韓国語勉強アプリ</title>
+<style>
+:root{--primary:#6C63FF;--primary-dark:#5a52e0;--correct:#22c55e;--wrong:#ef4444;--bg:#f0f2ff;--card-bg:#fff;--text:#1e1b4b;--text-sub:#6b7280;--shadow:0 4px 20px rgba(108,99,255,0.12);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:32px;}
+header{background:linear-gradient(135deg,var(--primary) 0%,#a78bfa 100%);color:#fff;padding:20px 16px 16px;text-align:center;}
+header h1{font-size:1.4rem;font-weight:800;letter-spacing:.05em;}
+header p{font-size:.82rem;opacity:.85;margin-top:4px;}
+.mode-tabs{display:flex;background:#fff;border-bottom:2px solid #e5e7eb;position:sticky;top:0;z-index:10;}
+.mode-tab{flex:1;padding:14px;border:none;background:none;font-size:.9rem;font-weight:600;cursor:pointer;color:var(--text-sub);transition:all .2s;border-bottom:3px solid transparent;margin-bottom:-2px;}
+.mode-tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+.cats-wrap{padding:12px 12px 8px;overflow-x:auto;white-space:nowrap;scrollbar-width:none;}
+.cats-wrap::-webkit-scrollbar{display:none;}
+.cat-btn{display:inline-block;padding:6px 14px;border-radius:999px;border:2px solid #d1d5db;background:#fff;font-size:.78rem;font-weight:600;cursor:pointer;margin-right:8px;transition:all .2s;white-space:nowrap;}
+.cat-btn.active{background:var(--primary);border-color:var(--primary);color:#fff;}
+.progress-bar-wrap{padding:0 16px 8px;display:flex;align-items:center;gap:10px;}
+.progress-bar{flex:1;height:6px;background:#e5e7eb;border-radius:999px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--primary);border-radius:999px;transition:width .3s;}
+.progress-label{font-size:.75rem;color:var(--text-sub);min-width:50px;text-align:right;}
+.flashcard-area{padding:12px 16px 0;}
+.card-scene{perspective:1000px;height:240px;cursor:pointer;}
+.card-inner{width:100%;height:100%;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.4,2,.55,.44);position:relative;}
+.card-scene.flipped .card-inner{transform:rotateY(180deg);}
+.card-front,.card-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
+.card-front{background:linear-gradient(135deg,#6C63FF 0%,#a78bfa 100%);color:#fff;}
+.card-back{background:var(--card-bg);color:var(--text);transform:rotateY(180deg);border:2px solid #e5e7eb;}
+.card-cat{font-size:.72rem;font-weight:700;letter-spacing:.1em;opacity:.75;margin-bottom:12px;text-transform:uppercase;}
+.card-question{font-size:1.1rem;font-weight:700;text-align:center;line-height:1.5;}
+.card-answer{font-size:1rem;font-weight:600;text-align:center;line-height:1.6;color:var(--primary);}
+.card-hint{font-size:.75rem;color:var(--text-sub);margin-top:8px;text-align:center;}
+.tap-hint{text-align:center;font-size:.78rem;color:var(--text-sub);margin-top:10px;}
+.card-nav{display:flex;gap:12px;padding:16px 16px 0;align-items:center;justify-content:center;}
+.nav-btn{padding:10px 28px;border-radius:12px;border:2px solid var(--primary);background:#fff;color:var(--primary);font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s;min-width:44px;min-height:44px;}
+.nav-btn:hover{background:var(--primary);color:#fff;}
+.nav-btn:disabled{opacity:.35;cursor:default;}
+.shuffle-btn{padding:10px 16px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-size:1rem;cursor:pointer;transition:all .2s;min-height:44px;}
+.quiz-area{padding:12px 16px 0;}
+.score-row{display:flex;gap:10px;margin-bottom:14px;}
+.score-badge{flex:1;padding:10px;border-radius:12px;text-align:center;font-size:.78rem;font-weight:700;}
+.score-badge.correct-badge{background:#dcfce7;color:#166534;}
+.score-badge.wrong-badge{background:#fee2e2;color:#991b1b;}
+.score-badge span{display:block;font-size:1.4rem;}
+.quiz-card{background:var(--card-bg);border-radius:16px;box-shadow:var(--shadow);padding:20px;}
+.quiz-cat{font-size:.72rem;font-weight:700;color:var(--primary);letter-spacing:.08em;margin-bottom:10px;}
+.quiz-question{font-size:1rem;font-weight:700;line-height:1.6;margin-bottom:18px;}
+.choices{display:flex;flex-direction:column;gap:10px;}
+.choice-btn{padding:14px 16px;border-radius:12px;border:2px solid #e5e7eb;background:#fff;text-align:left;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .2s;min-height:44px;display:flex;align-items:center;gap:12px;}
+.choice-btn .label{width:28px;height:28px;border-radius:50%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:800;flex-shrink:0;transition:all .2s;}
+.choice-btn:hover:not(:disabled){border-color:var(--primary);background:#f5f3ff;}
+.choice-btn.correct{border-color:var(--correct);background:#dcfce7;}
+.choice-btn.correct .label{background:var(--correct);color:#fff;}
+.choice-btn.wrong{border-color:var(--wrong);background:#fee2e2;}
+.choice-btn.wrong .label{background:var(--wrong);color:#fff;}
+.choice-btn:disabled{cursor:default;}
+.explanation{margin-top:14px;padding:12px 14px;background:#f5f3ff;border-radius:10px;border-left:4px solid var(--primary);font-size:.82rem;line-height:1.6;color:var(--text);display:none;}
+.explanation.show{display:block;}
+.next-btn{display:none;width:100%;margin-top:14px;padding:14px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;transition:all .2s;}
+.next-btn.show{display:block;}
+.next-btn:hover{background:var(--primary-dark);}
+.result-screen{display:none;padding:32px 16px;flex-direction:column;align-items:center;text-align:center;}
+.result-screen.show{display:flex;}
+.result-emoji{font-size:4rem;margin-bottom:16px;}
+.result-title{font-size:1.3rem;font-weight:800;margin-bottom:8px;}
+.result-score{font-size:2.5rem;font-weight:900;color:var(--primary);margin-bottom:8px;}
+.result-msg{font-size:.88rem;color:var(--text-sub);margin-bottom:24px;}
+.retry-btn{padding:14px 40px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-size:1rem;font-weight:700;cursor:pointer;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🇰🇷 韓国語勉強アプリ</h1>
+  <p>ハングル・単語・文法・TOPIK対策 — 全レベル対応 500問</p>
+</header>
+<div class="mode-tabs">
+  <button class="mode-tab active" onclick="setMode('flash')">🃏 フラッシュカード</button>
+  <button class="mode-tab" onclick="setMode('quiz')">📝 4択クイズ</button>
+</div>
+<div class="cats-wrap" id="catsWrap"></div>
+<div class="progress-bar-wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-label" id="progressLabel"></div>
+</div>
+<div id="flashSection">
+  <div class="flashcard-area">
+    <div class="card-scene" id="cardScene" onclick="flipCard()">
+      <div class="card-inner" id="cardInner">
+        <div class="card-front"><div class="card-cat" id="fcCat"></div><div class="card-question" id="fcQ"></div></div>
+        <div class="card-back"><div class="card-cat" id="fcCatB">答え</div><div class="card-answer" id="fcA"></div><div class="card-hint" id="fcHint"></div></div>
+      </div>
+    </div>
+    <div class="tap-hint">タップでめくる</div>
+  </div>
+  <div class="card-nav">
+    <button class="nav-btn" id="prevBtn" onclick="prevCard()">← 前へ</button>
+    <button class="shuffle-btn" onclick="shuffleCards()">🔀</button>
+    <button class="nav-btn" id="nextBtn" onclick="nextCard()">次へ →</button>
+  </div>
+</div>
+<div id="quizSection" style="display:none">
+  <div class="quiz-area">
+    <div class="score-row">
+      <div class="score-badge correct-badge">正解<span id="correctCount">0</span></div>
+      <div class="score-badge wrong-badge">不正解<span id="wrongCount">0</span></div>
+    </div>
+    <div class="quiz-card" id="quizCard">
+      <div class="quiz-cat" id="qCat"></div>
+      <div class="quiz-question" id="qQuestion"></div>
+      <div class="choices" id="choices"></div>
+      <div class="explanation" id="explanation"></div>
+      <button class="next-btn" id="nextQuizBtn" onclick="nextQuiz()">次の問題 →</button>
+    </div>
+    <div class="result-screen" id="resultScreen">
+      <div class="result-emoji" id="resultEmoji"></div>
+      <div class="result-title">クイズ終了！</div>
+      <div class="result-score" id="resultScore"></div>
+      <div class="result-msg" id="resultMsg"></div>
+      <button class="retry-btn" onclick="retryQuiz()">もう一度挑戦</button>
+    </div>
+  </div>
+</div>
+<script>
+const ALL_QUESTIONS = [
+// ===== ハングル基礎 =====
+{cat:"ハングル基礎",q:"「아」の読み方は？",a:"ア",choices:["ア","イ","ウ","エ"],correct:0,exp:"아はアの音。韓国語基本母音の一つ。"},
+{cat:"ハングル基礎",q:"「이」の読み方は？",a:"イ",choices:["イ","ア","ウ","エ"],correct:0,exp:"이はイの音。唇を横に引いて発音。"},
+{cat:"ハングル基礎",q:"「우」の読み方は？",a:"ウ（唇を丸める）",choices:["ウ","オ","ア","エ"],correct:0,exp:"우はウ。唇を丸めて前に出す。"},
+{cat:"ハングル基礎",q:"「에」の読み方は？",a:"エ",choices:["エ","ア","オ","イ"],correct:0,exp:"에はエの音。애（ア寄りのエ）と区別する。"},
+{cat:"ハングル基礎",q:"「오」の読み方は？",a:"オ",choices:["オ","ウ","ア","エ"],correct:0,exp:"오はオ。唇を丸めて発音する。"},
+{cat:"ハングル基礎",q:"「야」の読み方は？",a:"ヤ",choices:["ヤ","イア","ヨ","ユ"],correct:0,exp:"야はヤ。아の前にi音が付いた二重母音。"},
+{cat:"ハングル基礎",q:"「여」の読み方は？",a:"ヨ",choices:["ヨ","ヤ","ユ","イ"],correct:0,exp:"여はヨ。어の前にi音が付いた二重母音。"},
+{cat:"ハングル基礎",q:"「유」の読み方は？",a:"ユ",choices:["ユ","ヨ","イ","ウ"],correct:0,exp:"유はユ。우の前にi音が付いた二重母音。"},
+{cat:"ハングル基礎",q:"「으」の読み方は？",a:"ウ（口を横に引いて）",choices:["横引きウ","丸めウ","エ","オ"],correct:0,exp:"으は口を横に引いて発音するウ。日本語にない音。"},
+{cat:"ハングル基礎",q:"「의」の読み方は？",a:"ウィ（二重母音）",choices:["ウィ","イ","ウ","エ"],correct:0,exp:"의はウィ。助詞の~의は「エ」に近く発音されることも。"},
+{cat:"ハングル基礎",q:"「ㄱ」の音は？",a:"k / g",choices:["k/g","t/d","p/b","s"],correct:0,exp:"ㄱは語頭でk、母音間でg。가（カ/ガ）など。"},
+{cat:"ハングル基礎",q:"「ㄴ」の音は？",a:"n（ナ行）",choices:["n","m","ng","r"],correct:0,exp:"ㄴはn音。日本語のナ行に対応。"},
+{cat:"ハングル基礎",q:"「ㄷ」の音は？",a:"t / d",choices:["t/d","k/g","p/b","j"],correct:0,exp:"ㄷは語頭でt、母音間でd。다（タ/ダ）など。"},
+{cat:"ハングル基礎",q:"「ㄹ」の音は？",a:"r / l",choices:["r/l","n","m","ng"],correct:0,exp:"ㄹは語頭でr（弾き音）、語末やll環境でl。"},
+{cat:"ハングル基礎",q:"「ㅁ」の音は？",a:"m（マ行）",choices:["m","n","ng","b"],correct:0,exp:"ㅁはm音。마（マ）など。パッチムでも「ム」。"},
+{cat:"ハングル基礎",q:"「ㅂ」の音は？",a:"p / b",choices:["p/b","t/d","k/g","m"],correct:0,exp:"ㅂは語頭でp、母音間でb。바（パ/バ）など。"},
+{cat:"ハングル基礎",q:"「ㅅ」の音は？",a:"s（サ行）",choices:["s","z","sh","h"],correct:0,exp:"ㅅはs音。이の前ではシに近い音。"},
+{cat:"ハングル基礎",q:"「ㅇ」の音は？",a:"語頭=無音、パッチム=ng",choices:["無音/ng","h","n","m"],correct:0,exp:"ㅇは音節頭では無音の「枠」。末尾（パッチム）ではng。"},
+{cat:"ハングル基礎",q:"「ㅈ」の音は？",a:"j / ch",choices:["j/ch","s","z","t"],correct:0,exp:"ㅈはj音。語頭では清音、母音間で濁ることも。"},
+{cat:"ハングル基礎",q:"「ㅎ」の音は？",a:"h（ハ行）",choices:["h","f","p","k"],correct:0,exp:"ㅎはh音。ハ行に対応。"},
+{cat:"ハングル基礎",q:"「ㅋ」の音は？",a:"kh（激音・ㄱの息強版）",choices:["激音k","濃音k","普通k","g"],correct:0,exp:"ㅋはㄱの激音。息を強く出すk。"},
+{cat:"ハングル基礎",q:"「ㅌ」の音は？",a:"th（激音・ㄷの息強版）",choices:["激音t","濃音t","普通t","d"],correct:0,exp:"ㅌはㄷの激音。息を強く出すt。"},
+{cat:"ハングル基礎",q:"「ㅍ」の音は？",a:"ph（激音・ㅂの息強版）",choices:["激音p","濃音p","普通p","b"],correct:0,exp:"ㅍはㅂの激音。息を強く出すp。"},
+{cat:"ハングル基礎",q:"「ㅊ」の音は？",a:"ch（激音・ㅈの息強版）",choices:["激音ch","濃音j","普通j","s"],correct:0,exp:"ㅊはㅈの激音。息を強く出すch。"},
+{cat:"ハングル基礎",q:"「ㄲ」の音は？",a:"kk（濃音・詰まった強いk）",choices:["濃音k","激音k","普通k","g"],correct:0,exp:"ㄲはㄱの濃音。息を止めて緊張させたk。"},
+{cat:"ハングル基礎",q:"「ㄸ」の音は？",a:"tt（濃音・詰まった強いt）",choices:["濃音t","激音t","普通t","d"],correct:0,exp:"ㄸはㄷの濃音。息を止めて緊張させたt。"},
+{cat:"ハングル基礎",q:"「ㅃ」の音は？",a:"pp（濃音・詰まった強いp）",choices:["濃音p","激音p","普通p","b"],correct:0,exp:"ㅃはㅂの濃音。息を止めて緊張させたp。"},
+{cat:"ハングル基礎",q:"「ㅆ」の音は？",a:"ss（濃音・詰まった強いs）",choices:["濃音s","激音s","普通s","z"],correct:0,exp:"ㅆはㅅの濃音。있다（ある）のㅆが代表例。"},
+{cat:"ハングル基礎",q:"「ㅉ」の音は？",a:"jj（濃音・詰まった強いj）",choices:["濃音j","激音j","普通j","ch"],correct:0,exp:"ㅉはㅈの濃音。짜다（辛い）のㅉが例。"},
+{cat:"ハングル基礎",q:"「가」の読みは？",a:"ガ（ga）",choices:["ガ","カ","ナ","ダ"],correct:0,exp:"가はㄱ+아。語頭でカ、他の場面ではガ。"},
+{cat:"ハングル基礎",q:"「나」の読みは？",a:"ナ（na）",choices:["ナ","マ","ラ","ダ"],correct:0,exp:"나はㄴ+아=ナ。나（私）など基本単語。"},
+{cat:"ハングル基礎",q:"「다」の読みは？",a:"ダ（da）",choices:["ダ","タ","サ","ラ"],correct:0,exp:"다はㄷ+아=ダ。다（全部・終わり）など。"},
+{cat:"ハングル基礎",q:"「라」の読みは？",a:"ラ（ra）",choices:["ラ","ナ","マ","ガ"],correct:0,exp:"라はㄹ+아=ラ。語頭のラ行。"},
+{cat:"ハングル基礎",q:"「마」の読みは？",a:"マ（ma）",choices:["マ","バ","ナ","ハ"],correct:0,exp:"마はㅁ+아=マ。마음（気持ち）など。"},
+{cat:"ハングル基礎",q:"「바」の読みは？",a:"バ（ba）",choices:["バ","パ","マ","サ"],correct:0,exp:"바はㅂ+아=バ。바다（海）など。"},
+{cat:"ハングル基礎",q:"「사」の読みは？",a:"サ（sa）",choices:["サ","ザ","シャ","ハ"],correct:0,exp:"사はㅅ+아=サ。사람（人）など。"},
+{cat:"ハングル基礎",q:"「하」の読みは？",a:"ハ（ha）",choices:["ハ","カ","パ","タ"],correct:0,exp:"하はㅎ+아=ハ。하다（する）の語幹。"},
+{cat:"ハングル基礎",q:"「한」のパッチム（終声）は？",a:"ㄴ（n）",choices:["ㄴ","ㄱ","ㅂ","ㅁ"],correct:0,exp:"한=ㅎ+아+ㄴ。末尾のㄴがパッチム。발음はハン。"},
+{cat:"ハングル基礎",q:"「밥」のパッチムは？",a:"ㅂ（p）",choices:["ㅂ","ㄱ","ㄴ","ㅁ"],correct:0,exp:"밥（ご飯）の末尾ㅂがパッチム。発音はバプ。"},
+{cat:"ハングル基礎",q:"「학」のパッチムは？",a:"ㄱ（k）",choices:["ㄱ","ㄴ","ㅂ","ㅅ"],correct:0,exp:"학（学）の末尾ㄱがパッチム。学校=학교。"},
+{cat:"ハングル基礎",q:"「한국」はどう読む？",a:"ハングク",choices:["ハングク","ハンコク","ハンキョク","ハングン"],correct:0,exp:"한국=한（ハン）+국（グク）。국のㄱが連音してグク。"},
+{cat:"ハングル基礎",q:"「사랑」はどう読む？",a:"サラン（愛）",choices:["サラン","サラム","サラム","サリム"],correct:0,exp:"사랑は「愛」。사（サ）+랑（ラン）。"},
+{cat:"ハングル基礎",q:"「감사」はどう読む？",a:"カムサ",choices:["カムサ","カンサ","ガムサ","カムシャ"],correct:0,exp:"감사=감（カム）+사（サ）。感謝の漢字語。"},
+{cat:"ハングル基礎",q:"「연락」の発音は？",a:"ヨルラク（連音化）",choices:["ヨルラク","ヨンラク","ヨンナク","ヨルナク"],correct:0,exp:"연락は連音化しヨルラクと読む。연のパッチムㄴが락のㄹと同化。"},
+{cat:"ハングル基礎",q:"平音・激音・濃音のうち息が最も強いのは？",a:"激音（ㅋ・ㅌ・ㅍ・ㅊ）",choices:["激音","濃音","平音","どれも同じ"],correct:0,exp:"激音は息を強く出す音。濃音は息を詰めた緊張音。平音は普通の音。"},
+{cat:"ハングル基礎",q:"「닭」の実際の発音は？",a:"[닥]（パッチムㄱ）",choices:["[닥]","[달]","[당]","[남]"],correct:0,exp:"닭は二重子音ㄺのパッチムを持つが、실제 발음はㄱだけ残り[닥]。"},
+{cat:"ハングル基礎",q:"「안녕」はどう読む？",a:"アンニョン",choices:["アンニョン","アニョン","アンニョム","アンニン"],correct:0,exp:"안녕=안（アン）+녕（ニョン）。あいさつの基本語。"},
+{cat:"ハングル基礎",q:"ハングルは子音と母音を組み合わせて何と呼ぶ単位にする？",a:"音節（글자）",choices:["音節（글자）","単語","文字列","パッチム"],correct:0,exp:"子音＋母音（＋パッチム）を一つのマスに収めた単位を音節（글자）という。"},
+{cat:"ハングル基礎",q:"「읽다」の二重パッチムは？",a:"ㄺ（ㄹ+ㄱ）",choices:["ㄺ","ㄻ","ㄼ","ㄽ"],correct:0,exp:"읽다（読む）のパッチムはㄺ（ㄹとㄱの二重子音）。発音は[일따]。"},
+{cat:"ハングル基礎",q:"「왜」の発音は？",a:"ウェ（wae）",choices:["ウェ","ワ","ウィ","ウォ"],correct:0,exp:"왜はウェ。왜요?（なぜですか）などで使う。"},
+{cat:"ハングル基礎",q:"連音化とは何か？",a:"パッチムが次の音節の初声ㅇに移動して発音される現象",choices:["パッチムが次の初声に移る","濁音化","鼻音化","激音化"],correct:0,exp:"例: 먹어요→[머거요]。먹のㄱパッチムがㅇ（無音）に移り머거요と読まれる。"},
+// ===== あいさつ・会話 =====
+{cat:"あいさつ・会話",q:"「안녕하세요」の意味は？",a:"こんにちは（丁寧）",choices:["こんにちは","さようなら","ありがとう","すみません"],correct:0,exp:"안녕하세요は時間帯を問わず使える基本的なあいさつ。"},
+{cat:"あいさつ・会話",q:"「감사합니다」の意味は？",a:"ありがとうございます",choices:["ありがとう","すみません","はじめまして","どういたしまして"],correct:0,exp:"감사합니다は感謝の丁寧表現。고맙습니다もほぼ同義。"},
+{cat:"あいさつ・会話",q:"「죄송합니다」の意味は？",a:"申し訳ありません",choices:["申し訳ない","ありがとう","よろしく","失礼します"],correct:0,exp:"죄송합니다は深いお詫び。미안해요より丁寧でフォーマル。"},
+{cat:"あいさつ・会話",q:"「이름이 뭐예요?」の意味は？",a:"お名前は何ですか？",choices:["名前は何ですか","どこですか","いくらですか","何歳ですか"],correct:0,exp:"이름（名前）＋이（が）＋뭐예요（何ですか）。"},
+{cat:"あいさつ・会話",q:"「어디서 왔어요?」の意味は？",a:"どこから来ましたか？",choices:["どこから来た","どこへ行く","どこにある","どこですか"],correct:0,exp:"어디（どこ）＋서（から）＋왔어요（来ました）。"},
+{cat:"あいさつ・会話",q:"「맛있어요」の意味は？",a:"おいしいです",choices:["おいしい","まずい","辛い","甘い"],correct:0,exp:"맛있어요は맛（味）＋있다（ある）の組み合わせ。"},
+{cat:"あいさつ・会話",q:"「잘 모르겠어요」の意味は？",a:"よくわかりません",choices:["わかりません","知っています","聞こえません","見えません"],correct:0,exp:"잘（よく）＋모르겠어요（わからない）。丁寧な答え方。"},
+{cat:"あいさつ・会話",q:"「얼마예요?」の意味は？",a:"いくらですか？",choices:["いくらですか","何ですか","どこですか","いつですか"],correct:0,exp:"얼마（いくら）＋예요（です）。ショッピング必須表現。"},
+{cat:"あいさつ・会話",q:"「천천히 말해 주세요」の意味は？",a:"ゆっくり話してください",choices:["ゆっくり話して","大声で","もう一度","静かに"],correct:0,exp:"천천히（ゆっくり）＋말해 주세요（話してください）。"},
+{cat:"あいさつ・会話",q:"「네」の意味は？",a:"はい",choices:["はい","いいえ","そう","えっ"],correct:0,exp:"네は「はい」。아니요は「いいえ」。"},
+{cat:"あいさつ・会話",q:"「아니요」の意味は？",a:"いいえ",choices:["いいえ","はい","そう","違う"],correct:0,exp:"아니요は「いいえ」。아니 は口語でよりカジュアル。"},
+{cat:"あいさつ・会話",q:"「안녕히 가세요」と「안녕히 계세요」の違いは？",a:"가세요=去る人へ、계세요=残る人へ",choices:["去る人へ/残る人へ","どちらも同じ","朝のあいさつ/夜のあいさつ","上の人/下の人へ"],correct:0,exp:"店を出るときは店員に「안녕히 계세요（さようなら）」と言う。"},
+{cat:"あいさつ・会話",q:"「처음 뵙겠습니다」の意味は？",a:"はじめまして",choices:["はじめまして","お久しぶり","よろしく","ありがとう"],correct:0,exp:"처음（はじめて）＋뵙겠습니다（お目にかかります）。フォーマルな初対面表現。"},
+{cat:"あいさつ・会話",q:"「잘 부탁드립니다」の意味は？",a:"よろしくお願いします",choices:["よろしく","ありがとう","さようなら","お疲れ様"],correct:0,exp:"잘（よく）＋부탁드립니다（お願いします）。드리다で敬語。"},
+{cat:"あいさつ・会話",q:"「괜찮아요?」の意味は？",a:"大丈夫ですか？",choices:["大丈夫ですか","何ですか","どこですか","いいですか"],correct:0,exp:"괜찮다（大丈夫）の丁寧疑問形。心配するときや許可を求めるときにも使う。"},
+{cat:"あいさつ・会話",q:"「도와주세요」の意味は？",a:"助けてください",choices:["助けてください","待ってください","来てください","見てください"],correct:0,exp:"도와주다（助けてあげる）の依頼形。緊急時にも使う重要表現。"},
+{cat:"あいさつ・会話",q:"「화장실이 어디예요?」の意味は？",a:"トイレはどこですか？",choices:["トイレはどこ","出口はどこ","レジはどこ","入口はどこ"],correct:0,exp:"화장실（化粧室＝トイレ）＋이（が）＋어디（どこ）＋예요（ですか）。"},
+{cat:"あいさつ・会話",q:"「사진 찍어도 돼요?」の意味は？",a:"写真を撮ってもいいですか？",choices:["写真を撮っていい","写真を見ていい","写真を送っていい","写真を消していい"],correct:0,exp:"사진（写真）＋찍어도 돼요?（撮ってもいいですか）。観光地での必須表現。"},
+{cat:"あいさつ・会話",q:"「한국어 할 줄 알아요?」の意味は？",a:"韓国語できますか？",choices:["韓国語できますか","韓国語勉強してますか","韓国語好きですか","韓国語わかりますか"],correct:0,exp:"할 줄 알아요は「〜することができますか（方法を知っていますか）」の意味。"},
+{cat:"あいさつ・会話",q:"「잠깐만요」の意味は？",a:"ちょっと待ってください",choices:["ちょっと待って","少しください","もう少し","すぐに"],correct:0,exp:"잠깐（しばらく）＋만（だけ）＋요（丁寧）= ちょっと待って。"},
+{cat:"あいさつ・会話",q:"「알겠어요」の意味は？",a:"わかりました",choices:["わかった","わからない","聞こえた","見えた"],correct:0,exp:"알다（わかる）の過去推測形。알겠습니다はさらに丁寧。"},
+{cat:"あいさつ・会話",q:"「좋아요」の意味は？",a:"いいです・好きです",choices:["いいです/好き","だめです","嫌いです","大丈夫"],correct:0,exp:"좋다（良い・好き）の丁寧形。状況によって「いい」と「好き」両方の意味。"},
+{cat:"あいさつ・会話",q:"「배고파요」の意味は？",a:"お腹が空きました",choices:["お腹が空いた","お腹いっぱい","喉が渇いた","疲れた"],correct:0,exp:"배（お腹）＋고프다（空腹だ）= 배고프다。배불러요（お腹いっぱい）と対。"},
+{cat:"あいさつ・会話",q:"「아파요」の意味は？",a:"痛いです・病気です",choices:["痛い/病気","疲れた","眠い","かゆい"],correct:0,exp:"아프다（痛い・病気）の丁寧形。어디가 아파요?（どこが痛いですか）。"},
+{cat:"あいさつ・会話",q:"「재미있어요」の意味は？",a:"面白いです",choices:["面白い","つまらない","難しい","簡単"],correct:0,exp:"재미（面白さ・楽しさ）＋있다（ある）= 面白い。재미없어요で「つまらない」。"},
+{cat:"あいさつ・会話",q:"「어떻게 지내세요?」の意味は？",a:"お元気ですか？（お過ごしですか？）",choices:["お元気ですか","いつですか","どこですか","何ですか"],correct:0,exp:"어떻게（どのように）＋지내다（過ごす）＋세요（丁寧）。近況を聞く挨拶。"},
+{cat:"あいさつ・会話",q:"「오랜만이에요」の意味は？",a:"お久しぶりです",choices:["お久しぶり","はじめまして","ただいま","おかえり"],correct:0,exp:"오랜만（長い間）＋이에요（です）。久しぶりに会ったときの挨拶。"},
+{cat:"あいさつ・会話",q:"「수고하셨어요」の意味は？",a:"お疲れ様でした",choices:["お疲れ様","ご苦労様","ありがとう","さようなら"],correct:0,exp:"수고（苦労・努力）하셨어요（されました）。仕事・作業後の労いの言葉。"},
+{cat:"あいさつ・会話",q:"「연락할게요」の意味は？",a:"連絡します",choices:["連絡します","連絡してください","連絡しました","連絡できません"],correct:0,exp:"연락하다（連絡する）＋ㄹ게요（〜します・意志）。"},
+{cat:"あいさつ・会話",q:"「전화번호가 뭐예요?」の意味は？",a:"電話番号は何ですか？",choices:["電話番号は何","名前は何","住所は何","メールは何"],correct:0,exp:"전화번호（電話番号）＋가（が）＋뭐예요（何ですか）。"},
+{cat:"あいさつ・会話",q:"「이거 주세요」の意味は？",a:"これをください",choices:["これください","あれください","それください","どれでも"],correct:0,exp:"이거（これ）＋주세요（ください）。指さして使える便利な表現。"},
+{cat:"あいさつ・会話",q:"「됐어요」の意味は？",a:"結構です・もういいです",choices:["結構です","もっとください","ありがとう","わかりました"],correct:0,exp:"됐다は「できた・済んだ・もういい」など文脈による多義語。"},
+{cat:"あいさつ・会話",q:"「있어요」と「없어요」の意味は？",a:"あります / ありません",choices:["あります/ありません","います/いません","知ってます/知りません","できます/できません"],correct:0,exp:"있다（ある・いる）と없다（ない・いない）の丁寧形。"},
+{cat:"あいさつ・会話",q:"「맞아요」の意味は？",a:"そうです・合っています",choices:["そうです","違います","わかりません","そうですか"],correct:0,exp:"맞다（合う・正しい）の丁寧形。相手の言葉に同意するときに使う。"},
+{cat:"あいさつ・会話",q:"「틀려요」の意味は？",a:"違います・間違えています",choices:["違います","合ってます","わかりません","そうですか"],correct:0,exp:"틀리다（間違える・違う）の丁寧形。다르다（異なる）とは使い分ける。"},
+{cat:"あいさつ・会話",q:"「왜요?」の意味は？",a:"なぜですか？",choices:["なぜ","いつ","どこ","何"],correct:0,exp:"왜（なぜ）＋요（丁寧）。理由を聞くときに使う。"},
+{cat:"あいさつ・会話",q:"「언제요?」の意味は？",a:"いつですか？",choices:["いつですか","どこですか","何ですか","誰ですか"],correct:0,exp:"언제（いつ）＋요（丁寧）。時期を聞く疑問詞。"},
+{cat:"あいさつ・会話",q:"「어떻게 해요?」の意味は？",a:"どうしますか・どうやって？",choices:["どうしますか","何ですか","いくらですか","どこですか"],correct:0,exp:"어떻게（どのように）＋해요（しますか）。方法・対処を聞く表現。"},
+{cat:"あいさつ・会話",q:"「다음에 봐요」の意味は？",a:"また今度ね・また会いましょう",choices:["また今度","さようなら","お久しぶり","はじめまして"],correct:0,exp:"다음에（次回に）＋봐요（会いましょう）。別れ際のカジュアルな表現。"},
+{cat:"あいさつ・会話",q:"「배불러요」の意味は？",a:"お腹いっぱいです",choices:["お腹いっぱい","お腹が空いた","食べたい","食べた"],correct:0,exp:"배（お腹）＋부르다（満腹だ）= 배부르다。食事後に使う。"},
+{cat:"あいさつ・会話",q:"「심심해요」の意味は？",a:"退屈です・暇です",choices:["退屈/暇","面白い","楽しい","忙しい"],correct:0,exp:"심심하다（退屈だ・暇だ）の丁寧形。심심해 죽겠어（退屈で死にそう）などとも。"},
+{cat:"あいさつ・会話",q:"「고마워요」の意味は？",a:"ありがとう（やや親しみ寄り）",choices:["ありがとう","すみません","大丈夫","さようなら"],correct:0,exp:"고맙다（ありがたい）の丁寧形。감사합니다よりやや打ち解けた感じ。"},
+{cat:"あいさつ・会話",q:"「실례합니다」の意味は？",a:"失礼します・少しよろしいですか",choices:["失礼します","ありがとう","すみません（謝罪）","はじめまして"],correct:0,exp:"실례（失礼）하다の丁寧形。人に話しかけるときや通り抜けるときに使う。"},
+{cat:"あいさつ・会話",q:"「잘 먹겠습니다」の意味は？",a:"いただきます",choices:["いただきます","ごちそうさま","おいしいです","食べたいです"],correct:0,exp:"食事の前のあいさつ。잘（よく）＋먹겠습니다（食べます）= いただきます。"},
+{cat:"あいさつ・会話",q:"「잘 먹었습니다」の意味は？",a:"ごちそうさまでした",choices:["ごちそうさま","いただきます","おいしかった","お腹いっぱい"],correct:0,exp:"食事の後のあいさつ。잘（よく）＋먹었습니다（食べました）。"},
+{cat:"あいさつ・会話",q:"「잠깐만 기다려 주세요」の意味は？",a:"少しお待ちください",choices:["少し待って","すぐ来ます","もう少しで","急いでます"],correct:0,exp:"잠깐만（ちょっと）＋기다려 주세요（お待ちください）。"},
+{cat:"あいさつ・会話",q:"「다시 한 번 말해 주세요」の意味は？",a:"もう一度言ってください",choices:["もう一度言って","ゆっくり言って","大きな声で","書いてください"],correct:0,exp:"다시（もう一度）＋한 번（一回）＋말해 주세요（言ってください）。"},
+{cat:"あいさつ・会話",q:"「별로예요」の意味は？",a:"あまりよくないです・たいしたことない",choices:["あまりよくない","とてもいい","普通","悪い"],correct:0,exp:"별로（たいして・あまり）＋예요（です）。否定的な評価を婉曲に伝える。"},
+{cat:"あいさつ・会話",q:"「그렇군요」の意味は？",a:"そうなんですね（相づち）",choices:["そうなんですね","違いますね","知りませんでした","わかりました"],correct:0,exp:"그렇다（そうだ）＋군요（発見・気づき）。会話の相づちとしてよく使う。"},
+{cat:"あいさつ・会話",q:"「정말요?」の意味は？",a:"本当ですか？",choices:["本当ですか","なぜですか","どうやって","いつですか"],correct:0,exp:"정말（本当に）＋요（丁寧）。놀란 반응（驚いた反応）として使う。"},
+{cat:"あいさつ・会話",q:"「어서 오세요」の意味は？",a:"いらっしゃいませ",choices:["いらっしゃいませ","さようなら","ありがとう","どうぞ"],correct:0,exp:"어서（早く・どうぞ）＋오세요（いらしてください）= いらっしゃいませ。"},
+// ===== 基本単語 =====
+{cat:"基本単語",q:"「물」の意味は？",a:"水",choices:["水","お湯","お茶","ジュース"],correct:0,exp:"물は水。물 주세요（お水ください）は必須表現。"},
+{cat:"基本単語",q:"「밥」の意味は？",a:"ご飯・食事",choices:["ご飯","パン","麺","おかず"],correct:0,exp:"밥はご飯または食事全般。밥 먹었어요?は日常的な挨拶にもなる。"},
+{cat:"基本単語",q:"「사람」の意味は？",a:"人",choices:["人","場所","物","時間"],correct:0,exp:"사람は人。한국 사람（韓国人）、일본 사람（日本人）のように使う。"},
+{cat:"基本単語",q:"「학교」の意味は？",a:"学校",choices:["学校","病院","会社","銀行"],correct:0,exp:"학교は漢字語「学校」。학생（学生）とセットで覚えよう。"},
+{cat:"基本単語",q:"「병원」の意味は？",a:"病院",choices:["病院","薬局","学校","会社"],correct:0,exp:"병원は病（病）院。아파요（痛い/病気）とセットで。"},
+{cat:"基本単語",q:"「시간」の意味は？",a:"時間",choices:["時間","時計","場所","今日"],correct:0,exp:"시간は時間。시간이 없어요（時間がない）はよく使う。"},
+{cat:"基本単語",q:"「친구」の意味は？",a:"友達",choices:["友達","家族","先生","隣人"],correct:0,exp:"친구は親舊（漢字語）→友達。친구랑（友達と）のように使う。"},
+{cat:"基本単語",q:"「집」の意味は？",a:"家・自宅",choices:["家","部屋","会社","学校"],correct:0,exp:"집は家。집에 가요（家に帰ります）は頻出フレーズ。"},
+{cat:"基本単語",q:"「날씨」の意味は？",a:"天気",choices:["天気","季節","空","雨"],correct:0,exp:"날씨は天気。날씨가 좋아요（天気がいい）はよく使う。"},
+{cat:"基本単語",q:"「오늘」の意味は？",a:"今日",choices:["今日","明日","昨日","今週"],correct:0,exp:"오늘は今日。내일（明日）・어제（昨日）とセットで。"},
+{cat:"基本単語",q:"「내일」の意味は？",a:"明日",choices:["明日","今日","昨日","明後日"],correct:0,exp:"내일は明日。내일 봐요（また明日）。"},
+{cat:"基本単語",q:"「어제」の意味は？",a:"昨日",choices:["昨日","今日","明日","先週"],correct:0,exp:"어제は昨日。오늘（今日）・내일（明日）と合わせて使う。"},
+{cat:"基本単語",q:"「돈」の意味は？",a:"お金",choices:["お金","財布","銀行","買い物"],correct:0,exp:"돈はお金。돈이 없어요（お金がない）は旅行でも重要。"},
+{cat:"基本単語",q:"「음식」の意味は？",a:"食べ物・料理",choices:["食べ物","飲み物","お菓子","果物"],correct:0,exp:"음식は飲食物全般。한국 음식（韓国料理）のように使う。"},
+{cat:"基本単語",q:"「가족」の意味は？",a:"家族",choices:["家族","友達","親戚","隣人"],correct:0,exp:"가족は家族（漢字語）。가족이 몇 명이에요?（家族は何人ですか）。"},
+{cat:"基本単語",q:"「아버지」の意味は？",a:"父",choices:["父","母","兄","祖父"],correct:0,exp:"아버지は父。아빠はパパ（口語）。"},
+{cat:"基本単語",q:"「어머니」の意味は？",a:"母",choices:["母","父","姉","祖母"],correct:0,exp:"어머니は母。엄마はママ（口語）。"},
+{cat:"基本単語",q:"「동생」の意味は？",a:"弟・妹",choices:["弟/妹","兄/姉","従兄弟","友達"],correct:0,exp:"동생は年下のきょうだい全般（弟・妹）。性別は남동생（弟）・여동생（妹）で区別。"},
+{cat:"基本単語",q:"「선생님」の意味は？",a:"先生",choices:["先生","学生","親","社長"],correct:0,exp:"선생님は先生（님は敬称）。선생님！と呼びかけにも使う。"},
+{cat:"基本単語",q:"「학생」の意味は？",a:"学生",choices:["学生","先生","会社員","子供"],correct:0,exp:"학생は学生（漢字語）。저는 학생이에요（私は学生です）。"},
+{cat:"基本単語",q:"「회사」の意味は？",a:"会社",choices:["会社","学校","病院","銀行"],correct:0,exp:"회사は会社（漢字語）。회사원（会社員）のように使う。"},
+{cat:"基本単語",q:"「바다」の意味は？",a:"海",choices:["海","山","川","湖"],correct:0,exp:"바다は海。여름에 바다에 가요（夏に海に行きます）。"},
+{cat:"基本単語",q:"「산」の意味は？",a:"山",choices:["山","川","海","森"],correct:0,exp:"산は山（漢字の山）。등산（登山）も同じ漢字から。"},
+{cat:"基本単語",q:"「강」の意味は？",a:"川・江",choices:["川","海","湖","山"],correct:0,exp:"강は川・江（漢字語）。한강（漢江）はソウルを流れる有名な川。"},
+{cat:"基本単語",q:"「하늘」の意味は？",a:"空",choices:["空","地面","海","山"],correct:0,exp:"하늘は空。하늘이 파래요（空が青い）。"},
+{cat:"基本単語",q:"「비」の意味は？",a:"雨",choices:["雨","雪","風","台風"],correct:0,exp:"비は雨。비가 와요（雨が降っています）。"},
+{cat:"基本単語",q:"「눈」の意味は？（2つ）",a:"雪 / 目（多義語）",choices:["雪/目","雨/耳","風/鼻","空/口"],correct:0,exp:"눈は「雪」と「目」の両方。눈이 와요（雪が降る）、눈이 크다（目が大きい）。"},
+{cat:"基本単語",q:"「바람」の意味は？",a:"風",choices:["風","嵐","台風","雷"],correct:0,exp:"바람は風。바람이 불어요（風が吹いています）。"},
+{cat:"基本単語",q:"「꽃」の意味は？",a:"花",choices:["花","木","葉","草"],correct:0,exp:"꽃は花。꽃을 사요（花を買います）。"},
+{cat:"基本単語",q:"「나무」の意味は？",a:"木・樹木",choices:["木","花","草","石"],correct:0,exp:"나무は木・樹木。나무가 많아요（木がたくさんある）。"},
+{cat:"基本単語",q:"「고양이」の意味は？",a:"猫",choices:["猫","犬","鳥","魚"],correct:0,exp:"고양이は猫。고양이가 귀여워요（猫が可愛い）。"},
+{cat:"基本単語",q:"「개」の意味は？",a:"犬",choices:["犬","猫","馬","牛"],correct:0,exp:"개は犬。개를 키워요（犬を飼っています）。"},
+{cat:"基本単語",q:"「책」の意味は？",a:"本・書籍",choices:["本","雑誌","新聞","ノート"],correct:0,exp:"책は本。책을 읽어요（本を読みます）。"},
+{cat:"基本単語",q:"「의자」の意味は？",a:"椅子",choices:["椅子","机","テーブル","ソファ"],correct:0,exp:"의자は椅子（漢字語：椅子）。의자에 앉으세요（椅子に座ってください）。"},
+{cat:"基本単語",q:"「문」の意味は？",a:"ドア・門",choices:["ドア","窓","壁","床"],correct:0,exp:"문はドア・門。문을 열어주세요（ドアを開けてください）。"},
+{cat:"基本単語",q:"「길」の意味は？",a:"道・道路",choices:["道","橋","駅","広場"],correct:0,exp:"길は道。길을 잃었어요（道に迷いました）。"},
+{cat:"基本単語",q:"「버스」の意味は？",a:"バス",choices:["バス","電車","タクシー","飛行機"],correct:0,exp:"버스はバス（外来語）。버스를 타요（バスに乗ります）。"},
+{cat:"基本単語",q:"「기차」の意味は？",a:"汽車・電車",choices:["電車/汽車","バス","タクシー","船"],correct:0,exp:"기차は汽車・列車。KTX（韓国高速鉄道）などもこれで呼ぶ。"},
+{cat:"基本単語",q:"「비행기」の意味は？",a:"飛行機",choices:["飛行機","ヘリ","船","電車"],correct:0,exp:"비행기は飛行機（漢字語：飛行機）。비행기를 타요（飛行機に乗ります）。"},
+{cat:"基本単語",q:"「핸드폰」の意味は？",a:"携帯電話",choices:["携帯電話","コンピュータ","テレビ","ラジオ"],correct:0,exp:"핸드폰はハンドフォン（和製英語由来）。휴대폰とも言う。"},
+{cat:"基本単語",q:"「남자」の意味は？",a:"男性・男",choices:["男性","女性","子供","大人"],correct:0,exp:"남자は男性（漢字語：男子）。남자 친구で彼氏の意味にもなる。"},
+{cat:"基本単語",q:"「여자」の意味は？",a:"女性・女",choices:["女性","男性","老人","子供"],correct:0,exp:"여자は女性（漢字語：女子）。여자 친구で彼女の意味にも。"},
+{cat:"基本単語",q:"「아이」の意味は？",a:"子供",choices:["子供","大人","老人","赤ちゃん"],correct:0,exp:"아이は子供。어린이（お子さん）と似た意味だが아이はより日常的。"},
+{cat:"基本単語",q:"「시장」の意味は？",a:"市場",choices:["市場","スーパー","デパート","コンビニ"],correct:0,exp:"시장は市場（漢字語）。남대문 시장（南大門市場）など観光地にも多い。"},
+{cat:"基本単語",q:"「공원」の意味は？",a:"公園",choices:["公園","広場","庭","運動場"],correct:0,exp:"공원は公園（漢字語：公園）。공원에서 산책해요（公園を散歩します）。"},
+{cat:"基本単語",q:"「컴퓨터」の意味は？",a:"コンピュータ",choices:["コンピュータ","携帯","テレビ","ゲーム機"],correct:0,exp:"컴퓨터はコンピュータ（外来語）。컴퓨터로 일해요（コンピュータで仕事します）。"},
+{cat:"基本単語",q:"「이름」の意味は？",a:"名前",choices:["名前","住所","電話番号","年齢"],correct:0,exp:"이름は名前。이름이 뭐예요?（名前は何ですか）。"},
+{cat:"基本単語",q:"「나라」の意味は？",a:"国",choices:["国","都市","村","地域"],correct:0,exp:"나라は国（固有語）。어느 나라 사람이에요?（どこの国の人ですか）。"},
+{cat:"基本単語",q:"「말」の意味は？（言語として）",a:"言葉・言語",choices:["言葉","馬","足","声"],correct:0,exp:"말は言葉・言語（馬も말）。한국말（韓国語）、일본말（日本語）。"},
+{cat:"基本単語",q:"「색깔」の意味は？",a:"色・色彩",choices:["色","形","大きさ","模様"],correct:0,exp:"색깔は色。빨간색（赤）・파란색（青）・노란색（黄）など。"},
+{cat:"基本単語",q:"「가게」の意味は？",a:"お店・店",choices:["お店","会社","工場","倉庫"],correct:0,exp:"가게はお店（固有語）。편의점（コンビニ）や작은 가게（小さい店）など。"},
+// ===== 数字・時間 =====
+{cat:"数字・時間",q:"固有数詞「하나」は？",a:"1（ひとつ）",choices:["1","2","3","10"],correct:0,exp:"固有数詞1=하나。時間・年齢・数量に使う。"},
+{cat:"数字・時間",q:"固有数詞「둘」は？",a:"2（ふたつ）",choices:["2","3","4","20"],correct:0,exp:"固有数詞2=둘。두 명（2人）のように名詞前では두になる。"},
+{cat:"数字・時間",q:"固有数詞「셋」は？",a:"3（みっつ）",choices:["3","4","5","30"],correct:0,exp:"固有数詞3=셋。세 개（3個）のように名詞前では세になる。"},
+{cat:"数字・時間",q:"固有数詞「넷」は？",a:"4（よっつ）",choices:["4","3","5","40"],correct:0,exp:"固有数詞4=넷。네 시（4時）のように名詞前では네になる。"},
+{cat:"数字・時間",q:"固有数詞「다섯」は？",a:"5",choices:["5","6","7","50"],correct:0,exp:"固有数詞5=다섯。다섯 살（5歳）など。"},
+{cat:"数字・時間",q:"固有数詞「여섯」は？",a:"6",choices:["6","5","7","16"],correct:0,exp:"固有数詞6=여섯。"},
+{cat:"数字・時間",q:"固有数詞「일곱」は？",a:"7",choices:["7","6","8","17"],correct:0,exp:"固有数詞7=일곱。"},
+{cat:"数字・時間",q:"固有数詞「여덟」は？",a:"8",choices:["8","7","9","18"],correct:0,exp:"固有数詞8=여덟。"},
+{cat:"数字・時間",q:"固有数詞「아홉」は？",a:"9",choices:["9","8","10","19"],correct:0,exp:"固有数詞9=아홉。"},
+{cat:"数字・時間",q:"固有数詞「열」は？",a:"10",choices:["10","9","11","20"],correct:0,exp:"固有数詞10=열。열 살（10歳）。"},
+{cat:"数字・時間",q:"固有数詞「스물」は？",a:"20",choices:["20","12","30","22"],correct:0,exp:"固有数詞20=스물。스무 살（20歳）のように名詞前では스무になる。"},
+{cat:"数字・時間",q:"固有数詞「서른」は？",a:"30",choices:["30","20","40","13"],correct:0,exp:"固有数詞30=서른。서른 살（30歳）。"},
+{cat:"数字・時間",q:"固有数詞「마흔」は？",a:"40",choices:["40","30","50","14"],correct:0,exp:"固有数詞40=마흔。마흔 살（40歳）。"},
+{cat:"数字・時間",q:"固有数詞「쉰」は？",a:"50",choices:["50","40","60","15"],correct:0,exp:"固有数詞50=쉰。쉰 살（50歳）。"},
+{cat:"数字・時間",q:"漢数詞「일」は？",a:"1",choices:["1","2","3","7"],correct:0,exp:"漢数詞1=일。年・月・日・値段などに使う。"},
+{cat:"数字・時間",q:"漢数詞「이」は？",a:"2",choices:["2","1","3","20"],correct:0,exp:"漢数詞2=이。二月=이월。"},
+{cat:"数字・時間",q:"漢数詞「삼」は？",a:"3",choices:["3","4","5","30"],correct:0,exp:"漢数詞3=삼。三月=삼월。"},
+{cat:"数字・時間",q:"漢数詞「사」は？",a:"4",choices:["4","3","5","14"],correct:0,exp:"漢数詞4=사。四月=사월。"},
+{cat:"数字・時間",q:"漢数詞「오」は？",a:"5",choices:["5","6","7","50"],correct:0,exp:"漢数詞5=오。五月=오월。"},
+{cat:"数字・時間",q:"漢数詞「육」は？",a:"6",choices:["6","5","7","16"],correct:0,exp:"漢数詞6=육。六月は육월ではなく유월と発音変化。"},
+{cat:"数字・時間",q:"漢数詞「칠」は？",a:"7",choices:["7","6","8","17"],correct:0,exp:"漢数詞7=칠。七月=칠월。"},
+{cat:"数字・時間",q:"漢数詞「팔」は？",a:"8",choices:["8","7","9","18"],correct:0,exp:"漢数詞8=팔。八月=팔월。"},
+{cat:"数字・時間",q:"漢数詞「구」は？",a:"9",choices:["9","8","10","19"],correct:0,exp:"漢数詞9=구。九月=구월。"},
+{cat:"数字・時間",q:"漢数詞「십」は？",a:"10",choices:["10","9","11","100"],correct:0,exp:"漢数詞10=십。十月は시월（십월ではない）。"},
+{cat:"数字・時間",q:"漢数詞「백」は？",a:"100（百）",choices:["100","10","1000","10000"],correct:0,exp:"백は100（百）。이백（200）、삼백（300）など。"},
+{cat:"数字・時間",q:"漢数詞「천」は？",a:"1000（千）",choices:["1000","100","10000","10"],correct:0,exp:"천は1000（千）。이천（2000）、삼천（3000）など。"},
+{cat:"数字・時間",q:"漢数詞「만」は？",a:"10000（万）",choices:["10000","1000","100","100000"],correct:0,exp:"만は万（10000）。이만（2万）、삼만（3万）など。値段によく使う。"},
+{cat:"数字・時間",q:"「몇 시예요?」の意味は？",a:"何時ですか？",choices:["何時ですか","何分ですか","何日ですか","何年ですか"],correct:0,exp:"몇（いくつ・何）＋시（時）＋예요（ですか）。時刻の基本的な聞き方。"},
+{cat:"数字・時間",q:"「두 시 반」は何時何分？",a:"2時30分（2時半）",choices:["2時半","2時15分","3時半","12時半"],correct:0,exp:"두（2：固有数詞）＋시（時）＋반（半）= 2時半。"},
+{cat:"数字・時間",q:"時刻を言うとき何を使う？",a:"固有数詞（한、두、세…）",choices:["固有数詞","漢数詞","どちらでもいい","英語"],correct:0,exp:"時刻には固有数詞。한 시（1時）・두 시（2時）・세 시（3時）など。"},
+{cat:"数字・時間",q:"「오전」と「오후」の意味は？",a:"午前 / 午後",choices:["午前/午後","夜明け/夕方","朝/夜","早朝/深夜"],correct:0,exp:"오전（午前）・오후（午後）はいずれも漢字語。"},
+{cat:"数字・時間",q:"「아침」の意味は？",a:"朝・朝食",choices:["朝","昼","夜","夕方"],correct:0,exp:"아침は朝または朝食。아침을 먹었어요?（朝ごはん食べた？）。"},
+{cat:"数字・時間",q:"「점심」の意味は？",a:"昼・昼食",choices:["昼","朝","夜","おやつ"],correct:0,exp:"점심は昼・昼食（漢字語：點心）。점심 먹으러 가요（昼ごはん食べに行こう）。"},
+{cat:"数字・時間",q:"「저녁」の意味は？",a:"夜・夕方・夕食",choices:["夕方/夕食","朝","昼","深夜"],correct:0,exp:"저녁は夕方～夜・夕食。저녁을 먹다（夕食を食べる）。"},
+{cat:"数字・時間",q:"「밤」の意味は？",a:"夜（時間帯）",choices:["夜","朝","昼","夕方"],correct:0,exp:"밤は夜（時間帯）。밤에（夜に）。밤栗（クリ）も밤。"},
+{cat:"数字・時間",q:"「월요일」は何曜日？",a:"月曜日",choices:["月曜","火曜","水曜","日曜"],correct:0,exp:"월요일は月曜。월（月）＋요일（曜日）。"},
+{cat:"数字・時間",q:"「수요일」は何曜日？",a:"水曜日",choices:["水曜","月曜","木曜","金曜"],correct:0,exp:"수요일は水曜。水（수）＋요일。"},
+{cat:"数字・時間",q:"「금요일」は何曜日？",a:"金曜日",choices:["金曜","土曜","木曜","日曜"],correct:0,exp:"금요일は金曜。金（금）＋요일。"},
+{cat:"数字・時間",q:"「토요일」は何曜日？",a:"土曜日",choices:["土曜","日曜","月曜","金曜"],correct:0,exp:"토요일は土曜。土（토）＋요일。"},
+{cat:"数字・時間",q:"「일요일」は何曜日？",a:"日曜日",choices:["日曜","月曜","土曜","水曜"],correct:0,exp:"일요일は日曜。日（일）＋요일。"},
+{cat:"数字・時間",q:"「유월」は何月？（なぜ「육월」でない？）",a:"6月（発音変化で유월）",choices:["6月","5月","7月","16月"],correct:0,exp:"6月は육월ではなく유월と読む。발음 변화（音変化）による例外。"},
+{cat:"数字・時間",q:"「시월」は何月？（なぜ「십월」でない？）",a:"10月（発音変化で시월）",choices:["10月","9月","11月","12月"],correct:0,exp:"10月は십월ではなく시월。音が変化する例外として覚える。"},
+{cat:"数字・時間",q:"「봄」の意味は？",a:"春",choices:["春","夏","秋","冬"],correct:0,exp:"봄は春。봄이 왔어요（春が来ました）。"},
+{cat:"数字・時間",q:"「여름」の意味は？",a:"夏",choices:["夏","春","秋","冬"],correct:0,exp:"여름は夏。여름에 더워요（夏は暑いです）。"},
+{cat:"数字・時間",q:"「가을」の意味は？",a:"秋",choices:["秋","春","夏","冬"],correct:0,exp:"가을は秋。가을이 좋아요（秋が好きです）。"},
+{cat:"数字・時間",q:"「겨울」の意味は？",a:"冬",choices:["冬","秋","春","夏"],correct:0,exp:"겨울は冬。겨울에 추워요（冬は寒いです）。"},
+{cat:"数字・時間",q:"「생일이 언제예요?」の意味は？",a:"誕生日はいつですか？",choices:["誕生日はいつ","名前は何","何歳ですか","どこ出身"],correct:0,exp:"생일（誕生日）＋이（が）＋언제（いつ）＋예요（ですか）。"},
+{cat:"数字・時間",q:"「삼만 원」はいくら？",a:"3万ウォン",choices:["3万ウォン","30万ウォン","3千ウォン","3百ウォン"],correct:0,exp:"삼（3）＋만（万）＋원（ウォン）= 3万ウォン。値段は漢数詞で読む。"},
+{cat:"数字・時間",q:"「몇 살이에요?」の意味は？",a:"何歳ですか？",choices:["何歳ですか","何人ですか","何月ですか","何番ですか"],correct:0,exp:"몇 살（何歳）＋이에요（ですか）。年齢は固有数詞＋살で表す。"},
+{cat:"数字・時間",q:"「이십오 살」は何歳？",a:"25歳",choices:["25歳","20歳","15歳","52歳"],correct:0,exp:"이십오（漢数詞25）＋살（歳）= 25歳。年齢は漢数詞も使える。"},
+// ===== 文法・表現 =====
+{cat:"文法・表現",q:"「-아/어요」は何に使う？",a:"丁寧な現在形の語尾",choices:["丁寧現在形","過去形","未来形","命令形"],correct:0,exp:"-아요/-어요は丁寧な現在・平叙文。먹어요（食べます）、가요（行きます）。"},
+{cat:"文法・表現",q:"「-았/었어요」は何形？",a:"過去形（〜しました）",choices:["過去形","現在形","未来形","進行形"],correct:0,exp:"-았어요/-었어요は過去形。먹었어요（食べました）、갔어요（行きました）。"},
+{cat:"文法・表現",q:"「-고 싶어요」の意味は？",a:"〜したいです（願望）",choices:["〜したい","〜できる","〜しなければ","〜してみる"],correct:0,exp:"-고 싶어요は願望。한국에 가고 싶어요（韓国に行きたい）。"},
+{cat:"文法・表現",q:"「-지 마세요」の意味は？",a:"〜しないでください（禁止）",choices:["〜しないで","〜してください","〜できます","〜してもいい"],correct:0,exp:"-지 마세요は禁止。뛰지 마세요（走らないでください）。"},
+{cat:"文法・表現",q:"「-ㄹ/을 수 있어요」の意味は？",a:"〜できます（可能）",choices:["〜できます","〜したいです","〜します","〜してください"],correct:0,exp:"-ㄹ/을 수 있어요は可能。한국어를 할 수 있어요（韓国語ができます）。"},
+{cat:"文法・表現",q:"「-아/어 주세요」の意味は？",a:"〜してください（依頼）",choices:["〜してください","〜してもいいですか","〜しません","〜しましょう"],correct:0,exp:"-아/어 주세요は丁寧な依頼。가르쳐 주세요（教えてください）。"},
+{cat:"文法・表現",q:"「-면/으면」の意味は？",a:"〜すれば・〜したら（条件）",choices:["条件（〜したら）","逆接","目的","理由"],correct:0,exp:"-면/으면は条件・仮定。비가 오면（雨が降ったら）。"},
+{cat:"文法・表現",q:"「이/가」と「은/는」の違いは？",a:"이/가=主格助詞、은/는=主題・対比",choices:["이/가=主格、은/는=主題","いずれも主格","いずれも主題","이/가=対比、은/는=主格"],correct:0,exp:"뭐가 좋아요?（何がいいですか）vs 저는 학생이에요（私は学生）。"},
+{cat:"文法・表現",q:"「을/를」は何の助詞？",a:"目的格助詞（〜を）",choices:["〜を（目的格）","〜が（主格）","〜は（主題）","〜に（場所）"],correct:0,exp:"을/를は目的格「〜を」。커피를 마셔요（コーヒーを飲みます）。"},
+{cat:"文法・表現",q:"「에서」と「에」の違いは？",a:"에서=動作の場所、에=存在・方向",choices:["에서=動作場所、에=存在・方向","同じ意味","에서=方向、에=動作","에서=人、에=物"],correct:0,exp:"학교에서 공부해요（学校で勉強）vs 학교에 있어요（学校にいる）。"},
+{cat:"文法・表現",q:"「-ㄴ/은」は何の語尾？",a:"連体形（〜な・〜した）",choices:["連体形（〜な）","過去形","疑問形","命令形"],correct:0,exp:"-ㄴ/은は名詞修飾の連体形。맛있는 음식（おいしい食べ物）。"},
+{cat:"文法・表現",q:"「-고」は何に使う？",a:"動作・状態の羅列・並列（〜して）",choices:["羅列・並列","理由","条件","逆接"],correct:0,exp:"-고は羅列・並列。밥을 먹고 커피를 마셔요（ご飯を食べてコーヒーを飲む）。"},
+{cat:"文法・表現",q:"「-아서/어서」の意味は？",a:"〜して・〜ので（理由・連続）",choices:["〜して/〜ので","〜だけど","〜すれば","〜しながら"],correct:0,exp:"-아서/어서は理由・連続。배가 아파서 병원에 가요（お腹が痛くて病院に行く）。"},
+{cat:"文法・表現",q:"「-지만」の意味は？",a:"〜だけど・〜だが（逆接）",choices:["〜だけど（逆接）","〜なので","〜すれば","〜しながら"],correct:0,exp:"-지만は逆接。비싸지만 맛있어요（高いけどおいしい）。"},
+{cat:"文法・表現",q:"「-도」は何の助詞？",a:"〜も（添加）",choices:["〜も（添加）","〜だけ","〜から","〜まで"],correct:0,exp:"-도は「〜も」。저도 가고 싶어요（私も行きたいです）。"},
+{cat:"文法・表現",q:"「-만」は何の助詞？",a:"〜だけ（限定）",choices:["〜だけ（限定）","〜も","〜から","〜まで"],correct:0,exp:"-만は「〜だけ」。하나만 주세요（一つだけください）。"},
+{cat:"文法・表現",q:"「-부터」の意味は？",a:"〜から（起点・始まり）",choices:["〜から（起点）","〜まで","〜に","〜で"],correct:0,exp:"-부터は起点。오늘부터（今日から）、아홉 시부터（9時から）。"},
+{cat:"文法・表現",q:"「-까지」の意味は？",a:"〜まで（終点）",choices:["〜まで（終点）","〜から","〜に","〜で"],correct:0,exp:"-까지は終点。다섯 시까지（5時まで）。부터〜까지でから〜まで。"},
+{cat:"文法・表現",q:"「-한테 / -에게」の意味は？",a:"〜に（人・動物に対して）",choices:["〜に（人へ）","〜で","〜から","〜と"],correct:0,exp:"-한테/-에게は人や動物への方向「〜に」。친구한테 줬어요（友達にあげた）。"},
+{cat:"文法・表現",q:"「-(으)로」の意味は？",a:"〜で（手段・方向）",choices:["〜で（手段）/〜へ","〜から","〜まで","〜に"],correct:0,exp:"-(으)로は手段・方向。버스로 가요（バスで行く）、왼쪽으로（左へ）。"},
+{cat:"文法・表現",q:"「-와/과・-(이)랑」の意味は？",a:"〜と（共同・列挙）",choices:["〜と（共同）","〜に","〜で","〜から"],correct:0,exp:"-와/과は書き言葉、-랑은口語。친구랑 가요（友達と行く）。"},
+{cat:"文法・表現",q:"「-의」の意味は？",a:"〜の（所有・関係）",choices:["〜の（所有）","〜が","〜を","〜は"],correct:0,exp:"-의は所有・関係の助詞。친구의 집（友達の家）。口語では省略されることも多い。"},
+{cat:"文法・表現",q:"「-고 있어요」の意味は？",a:"〜しています（進行）",choices:["〜しています","〜しました","〜します","〜したいです"],correct:0,exp:"-고 있다は進行形。지금 공부하고 있어요（今勉強しています）。"},
+{cat:"文法・表現",q:"「-아/어 봤어요」の意味は？",a:"〜してみました（経験）",choices:["〜してみた","〜しました","〜できました","〜しています"],correct:0,exp:"-아/어 봤어요は経験・試み。한국에 가 봤어요?（韓国に行ったことありますか）。"},
+{cat:"文法・表現",q:"「-아/어야 해요」の意味は？",a:"〜しなければなりません（義務）",choices:["〜しなければ","〜してもいい","〜できます","〜しましょう"],correct:0,exp:"-아/어야 해요は義務・必要。숙제를 해야 해요（宿題をしなければならない）。"},
+{cat:"文法・表現",q:"「안 + 동사」はどんな表現？",a:"〜しない（短い否定形）",choices:["短い否定","長い否定","できない","しなくていい"],correct:0,exp:"안 먹어요（食べません）。-지 않아요より口語的。"},
+{cat:"文法・表現",q:"「못 + 동사」はどんな表現？",a:"〜できない（能力・状況の否定）",choices:["できない（能力否定）","しない（意志否定）","してはいけない","したくない"],correct:0,exp:"못 먹어요（食べられません）。能力・状況的にできないとき。"},
+{cat:"文法・表現",q:"「-는 것」の意味は？",a:"〜すること（名詞化）",choices:["〜すること（名詞化）","〜する人","〜するとき","〜するから"],correct:0,exp:"-는 것は名詞節。한국어를 배우는 것이 재미있어요（韓国語を学ぶことが面白い）。"},
+{cat:"文法・表現",q:"「-(으)ㄹ 때」の意味は？",a:"〜するとき",choices:["〜するとき","〜してから","〜するまで","〜する前"],correct:0,exp:"-(으)ㄹ 때は「〜するとき」。시간이 있을 때（時間があるとき）。"},
+{cat:"文法・表現",q:"「-기 전에」の意味は？",a:"〜する前に",choices:["〜する前に","〜した後に","〜する間に","〜しながら"],correct:0,exp:"-기 전에は「〜する前に」。자기 전에（寝る前に）、먹기 전에（食べる前に）。"},
+{cat:"文法・表現",q:"「-(으)ㄴ 후에」の意味は？",a:"〜した後に・〜してから",choices:["〜した後に","〜する前に","〜する間","〜しながら"],correct:0,exp:"-(으)ㄴ 후에は「〜した後に」。밥을 먹은 후에（ご飯を食べた後に）。"},
+{cat:"文法・表現",q:"「-는 동안」の意味は？",a:"〜する間・〜している間",choices:["〜する間","〜する前","〜した後","〜してから"],correct:0,exp:"-는 동안は「〜する間」。한국에 있는 동안（韓国にいる間）。"},
+{cat:"文法・表現",q:"「-때문에」の意味は？",a:"〜のため・〜のせいで（理由）",choices:["〜のため（理由）","〜のために（目的）","〜だから（結果）","〜ならば"],correct:0,exp:"-때문에は理由。비 때문에（雨のせいで）。목적には-위해서を使う。"},
+{cat:"文法・表現",q:"「-을 위해서」の意味は？",a:"〜のために（目的）",choices:["〜のために（目的）","〜のせいで（理由）","〜するために","〜のおかげで"],correct:0,exp:"-을 위해서は目的。건강을 위해서 운동해요（健康のために運動します）。"},
+{cat:"文法・表現",q:"「이에요/예요」は何の表現？",a:"〜です（名詞述語の丁寧形）",choices:["〜です（名詞述語）","〜があります","〜します","〜です（形容詞）"],correct:0,exp:"이에요（パッチムあり）/예요（パッチムなし）。학생이에요（学生です）、친구예요（友達です）。"},
+{cat:"文法・表現",q:"「-습니다/ㅂ니다」は何体？",a:"合쇼体（フォーマルな丁寧語尾）",choices:["フォーマル語尾","カジュアル語尾","命令形","疑問形"],correct:0,exp:"-습니다/ㅂ니다はフォーマルな書き言葉・発表・会議などで使う。"},
+{cat:"文法・表現",q:"「-네요」の意味・ニュアンスは？",a:"〜ですね（感嘆・新発見）",choices:["〜ですね（感嘆）","〜でしょうか","〜でした","〜らしい"],correct:0,exp:"-네요は新しい情報に気づいたときの感嘆。맛있네요（おいしいですね）。"},
+{cat:"文法・表現",q:"「-(으)세요」の意味は？",a:"〜してください・〜なさってください（丁寧命令）",choices:["丁寧命令/尊敬","普通の命令","禁止","疑問"],correct:0,exp:"-(으)세요は丁寧な命令・尊敬。앉으세요（お座りください）。"},
+{cat:"文法・表現",q:"「-(으)ㄹ게요」の意味は？",a:"〜します（話し手の意志・約束）",choices:["意志・約束","推量","依頼","疑問"],correct:0,exp:"-(으)ㄹ게요は話し手の意志・約束。내가 할게요（私がします）。"},
+{cat:"文法・表現",q:"「-(으)ㄹ까요?」の意味は？",a:"〜しましょうか？（提案・推量）",choices:["〜しましょうか","〜しますか","〜してください","〜でしょう"],correct:0,exp:"-(으)ㄹ까요?は提案や推量。같이 갈까요?（一緒に行きましょうか）。"},
+{cat:"文法・表現",q:"「-아/어도 돼요?」の意味は？",a:"〜してもいいですか？（許可を求める）",choices:["〜してもいいですか","〜しなければなりませんか","〜できますか","〜してください"],correct:0,exp:"-아/어도 돼요?は許可。여기 앉아도 돼요?（ここに座ってもいいですか）。"},
+{cat:"文法・表現",q:"「-지 않아도 돼요」の意味は？",a:"〜しなくてもいいです",choices:["〜しなくていい","〜しなければいけない","〜しないでください","〜できない"],correct:0,exp:"-지 않아도 돼요は「〜しなくてもいい」。서두르지 않아도 돼요（急がなくていいです）。"},
+{cat:"文法・表現",q:"「-겠어요」の意味・用法は？",a:"〜しそう・〜するつもり（推量・意志）",choices:["推量・意志","過去形","現在進行","確認"],correct:0,exp:"-겠어요は推量・意志。맛있겠어요（おいしそう）、알겠어요（わかりました）。"},
+{cat:"文法・表現",q:"「-더라고요」の意味は？",a:"〜でしたよ（過去の経験・回想）",choices:["〜でしたよ（回想）","〜でしょう","〜だそうです","〜らしい"],correct:0,exp:"-더라고요は話し手が経験した過去の事実を振り返って伝える表現。"},
+{cat:"文法・表現",q:"「-ㄹ/을 것 같아요」の意味は？",a:"〜しそうです・〜だと思います（推測）",choices:["〜しそう（推測）","〜します","〜しました","〜してください"],correct:0,exp:"-ㄹ 것 같아요は推測・婉曲。비가 올 것 같아요（雨が降りそう）。"},
+{cat:"文法・表現",q:"「-는데요」の意味・ニュアンスは？",a:"〜なんですが・〜ですけどね（前置き・婉曲）",choices:["前置き・婉曲","確認","感嘆","命令"],correct:0,exp:"-는데요は前置きや婉曲。좀 어려운데요（ちょっと難しいんですけど）。"},
+{cat:"文法・表現",q:"「-거든요」のニュアンスは？",a:"〜なんですよ（理由説明・情報提供）",choices:["理由説明","驚き","疑問","命令"],correct:0,exp:"-거든요は「〜なんですよ」と説明・理由を添える。한국 사람이거든요（韓国人なんですよ）。"},
+{cat:"文法・表現",q:"「-(이)라서」の意味は？",a:"〜なので（名詞＋理由）",choices:["〜なので（名詞後）","〜だから（動詞後）","〜だけど","〜なら"],correct:0,exp:"-(이)라서は名詞に付く理由の表現。학생이라서（学生なので）。"},
+{cat:"文法・表現",q:"「-처럼」の意味は？",a:"〜のように（比較・例え）",choices:["〜のように","〜より","〜ほど","〜くらい"],correct:0,exp:"-처럼は比較・例え。천사처럼 예뻐요（天使のようにきれい）。"},
+{cat:"文法・表現",q:"「-보다」の意味は？",a:"〜より（比較）",choices:["〜より（比較）","〜のように","〜ほど","〜くらい"],correct:0,exp:"-보다は比較「〜より」。어제보다 오늘이 더 추워요（昨日より今日が寒い）。"},
+{cat:"文法・表現",q:"「-ㄹ/을 줄 알아요」の意味は？",a:"〜することができます（方法・スキルを知っている）",choices:["できます（方法知ってる）","できます（状況的に）","知っています","しました"],correct:0,exp:"-ㄹ 줄 알아요は「方法を知っている・できる」。수영할 줄 알아요（泳げます）。"},
+// ===== 食べ物・グルメ =====
+{cat:"食べ物・グルメ",q:"「김치찌개」とは？",a:"キムチチゲ（キムチ鍋）",choices:["キムチチゲ","テンジャンチゲ","スンドゥブチゲ","プデチゲ"],correct:0,exp:"김치찌개はキムチを使った辛い鍋。韓国の代表的な家庭料理。"},
+{cat:"食べ物・グルメ",q:"「삼겹살」とは？",a:"豚バラ肉（サムギョプサル）",choices:["豚バラ","牛カルビ","鶏肉","豚足"],correct:0,exp:"삼겹살は三枚肉（豚バラ）。炭火で焼いてサンチュで包んで食べる。"},
+{cat:"食べ物・グルメ",q:"「냉면」とは？",a:"冷麺",choices:["冷麺","温かい麺","うどん","そば"],correct:0,exp:"냉면は冷（냉）麺（면）。平壌冷麺と咸興冷麺が有名。"},
+{cat:"食べ物・グルメ",q:"「비빔밥」とは？",a:"ビビンバ（混ぜご飯）",choices:["混ぜご飯","炊き込みご飯","お粥","おにぎり"],correct:0,exp:"비빔밥は비비다（混ぜる）＋밥（ご飯）。野菜・肉・コチュジャンを混ぜて食べる。"},
+{cat:"食べ物・グルメ",q:"「불고기」とは？",a:"プルコギ（甘辛焼き肉）",choices:["甘辛焼き肉","チゲ","チヂミ","冷麺"],correct:0,exp:"불고기は불（火）＋고기（肉）。甘辛いタレで漬けた薄切り牛肉の焼き肉。"},
+{cat:"食べ物・グルメ",q:"「된장찌개」とは？",a:"テンジャンチゲ（味噌鍋）",choices:["味噌鍋","キムチ鍋","豆腐鍋","海鮮鍋"],correct:0,exp:"된장찌개は韓国味噌（된장）を使った鍋。日本の味噌汁に似た家庭料理。"},
+{cat:"食べ物・グルメ",q:"「삼계탕」とは？",a:"サムゲタン（参鶏湯）",choices:["参鶏湯","サムギョプサル","カルビタン","テールスープ"],correct:0,exp:"삼계탕は丸鶏にもち米・ニンニク・高麗人参を詰めて煮た薬膳スープ。"},
+{cat:"食べ物・グルメ",q:"「떡볶이」とは？",a:"トッポッキ（辛口餅炒め）",choices:["辛口餅炒め","餃子炒め","麺炒め","野菜炒め"],correct:0,exp:"떡볶이は떡（餅）をコチュジャンで炒めた屋台の定番料理。"},
+{cat:"食べ物・グルメ",q:"「김밥」とは？",a:"キンパ（のり巻きご飯）",choices:["のり巻き","お粥","餅","チヂミ"],correct:0,exp:"김밥は김（のり）＋밥（ご飯）。日本の巻き寿司に似ているが酢飯でない。"},
+{cat:"食べ物・グルメ",q:"「파전」とは？",a:"パジョン（ネギチヂミ）",choices:["ネギチヂミ","キムチチヂミ","海鮮チヂミ","肉チヂミ"],correct:0,exp:"파전は파（ネギ）＋전（チヂミ）。雨の日に食べる風習がある。"},
+{cat:"食べ物・グルメ",q:"「주문하다」の意味は？",a:"注文する",choices:["注文する","支払う","キャンセルする","持ち帰る"],correct:0,exp:"주문하다は注文する。주문할게요（注文します）は飲食店で必須。"},
+{cat:"食べ物・グルメ",q:"「맵지 않게 해 주세요」の意味は？",a:"辛くしないでください",choices:["辛くしないで","甘くして","少なく","多く"],correct:0,exp:"맵다（辛い）＋지 않게（〜なく）＋해 주세요（してください）。"},
+{cat:"食べ物・グルメ",q:"「계산서 주세요」の意味は？",a:"お会計をお願いします",choices:["お会計を","メニューを","お水を","おしぼりを"],correct:0,exp:"계산서（請求書）＋주세요（ください）。레스토랑（レストラン）で必須。"},
+{cat:"食べ物・グルメ",q:"「맥주」の意味は？",a:"ビール",choices:["ビール","焼酎","マッコリ","ワイン"],correct:0,exp:"맥주は麦酒（漢字語）＝ビール。생맥주（生ビール）もよく聞く。"},
+{cat:"食べ物・グルメ",q:"「소주」の意味は？",a:"焼酎（ソジュ）",choices:["焼酎","ビール","マッコリ","清酒"],correct:0,exp:"소주は韓国の蒸留酒。アルコール度数は16〜25度程度。"},
+{cat:"食べ物・グルメ",q:"「막걸리」の意味は？",a:"マッコリ（濁り酒）",choices:["マッコリ","焼酎","ビール","清酒"],correct:0,exp:"막걸리は米で作った濁り酒。甘酸っぱくアルコール度数は低め。"},
+{cat:"食べ物・グルメ",q:"「고추장」とは？",a:"コチュジャン（唐辛子味噌）",choices:["唐辛子味噌","味噌","醤油","ごま油"],correct:0,exp:"고추장は고추（唐辛子）＋장（ジャン/醤）。비빔밥・떡볶이に必須の調味料。"},
+{cat:"食べ物・グルメ",q:"「갈비」とは？",a:"カルビ（牛・豚あばら肉）",choices:["カルビ","プルコギ","サムギョプサル","チョッパル"],correct:0,exp:"갈비は肋骨（あばら）肉。소갈비（牛カルビ）・돼지갈비（豚カルビ）がある。"},
+{cat:"食べ物・グルメ",q:"「잡채」とは？",a:"チャプチェ（春雨炒め）",choices:["春雨炒め","チヂミ","餃子","ビビンバ"],correct:0,exp:"잡채は春雨に野菜・肉を炒め合わせた料理。祝い事の席によく出る。"},
+{cat:"食べ物・グルメ",q:"「순두부찌개」とは？",a:"スンドゥブチゲ（柔らか豆腐鍋）",choices:["柔らか豆腐鍋","キムチ鍋","味噌鍋","海鮮鍋"],correct:0,exp:"순두부찌개は柔らかい豆腐を使った辛い鍋。卵を落として食べることが多い。"},
+{cat:"食べ物・グルメ",q:"「만두」とは？",a:"マンドゥ（餃子・蒸し餃子）",choices:["餃子/マンドゥ","チヂミ","春巻き","肉まん"],correct:0,exp:"만두は餃子・饅頭系の料理。찐만두（蒸し）・군만두（焼き）など種類がある。"},
+{cat:"食べ物・グルメ",q:"「치킨」とは？",a:"フライドチキン（韓国スタイル）",choices:["フライドチキン","鶏の丸焼き","サムゲタン","チキンカレー"],correct:0,exp:"치킨は韓国式フライドチキン。맥주와 치킨（ビールとチキン）は「치맥」と呼ばれる。"},
+{cat:"食べ物・グルメ",q:"「어묵」とは？",a:"オムク（練り物・さつま揚げ）",choices:["練り物","豆腐","こんにゃく","もち"],correct:0,exp:"어묵は魚のすり身で作った練り物。屋台の定番で떡볶이と一緒に食べることが多い。"},
+{cat:"食べ物・グルメ",q:"「맵다」の意味は？",a:"辛い",choices:["辛い","甘い","塩辛い","酸っぱい"],correct:0,exp:"맵다は辛い（唐辛子の辛さ）。얼마나 매워요?（どのくらい辛いですか）。"},
+{cat:"食べ物・グルメ",q:"「달다」の意味は？",a:"甘い",choices:["甘い","辛い","塩辛い","苦い"],correct:0,exp:"달다は甘い。달콤하다はより甘く甘ったるい感じ。"},
+{cat:"食べ物・グルメ",q:"「짜다」の意味は？",a:"塩辛い",choices:["塩辛い","辛い","甘い","苦い"],correct:0,exp:"짜다は塩辛い。너무 짜요（塩辛すぎます）はよく使う表現。"},
+{cat:"食べ物・グルメ",q:"「고추」の意味は？",a:"唐辛子",choices:["唐辛子","ニンニク","ネギ","ゴマ"],correct:0,exp:"고추は唐辛子。韓国料理に欠かせない辛みの源。"},
+{cat:"食べ物・グルメ",q:"「마늘」の意味は？",a:"ニンニク",choices:["ニンニク","ネギ","生姜","唐辛子"],correct:0,exp:"마늘はニンニク。韓国料理のほぼ全てに使われる基本食材。"},
+{cat:"食べ物・グルメ",q:"「참기름」の意味は？",a:"ごま油",choices:["ごま油","サラダ油","オリーブ油","コーン油"],correct:0,exp:"참기름はごま油。韓国料理の仕上げによく使われる香り高い油。"},
+{cat:"食べ物・グルメ",q:"「된장」の意味は？",a:"テンジャン（韓国の味噌）",choices:["韓国味噌","コチュジャン","醤油","塩"],correct:0,exp:"된장は韓国の発酵大豆味噌。日本の味噌とは異なる独特の風味がある。"},
+{cat:"食べ物・グルメ",q:"「간장」の意味は？",a:"醤油",choices:["醤油","味噌","塩","コチュジャン"],correct:0,exp:"간장は醤油（漢字語：간=감, 장=醤）。조림（煮物）・나물（おひたし）に使う。"},
+{cat:"食べ物・グルメ",q:"「설탕」の意味は？",a:"砂糖",choices:["砂糖","塩","酢","みりん"],correct:0,exp:"설탕は砂糖（漢字語：雪糖）。달달해요（甘いですね）との関連で覚えよう。"},
+{cat:"食べ物・グルメ",q:"「식초」の意味は？",a:"酢",choices:["酢","塩","醤油","砂糖"],correct:0,exp:"식초は食醋（漢字語）= 酢。냉면に入れる酸っぱさの源。"},
+{cat:"食べ物・グルメ",q:"「배달」の意味は？",a:"デリバリー・配達",choices:["配達","テイクアウト","持ち帰り","予約"],correct:0,exp:"배달は配達。한국은 배달 문화가 발달해 있어요（韓国は配達文化が発達している）。"},
+{cat:"食べ物・グルメ",q:"「포장」（음식의 포장）の意味は？",a:"テイクアウト・包み",choices:["テイクアウト","配達","イートイン","予約"],correct:0,exp:"음식 포장は食べ物のテイクアウト。포장해 주세요（テイクアウトでお願いします）。"},
+{cat:"食べ物・グルメ",q:"「해물탕」とは？",a:"ヘムルタン（海鮮鍋）",choices:["海鮮鍋","サムゲタン","カルビタン","豆腐鍋"],correct:0,exp:"해물탕は海物（해물）＋湯（탕）= 海鮮鍋。イカ・エビ・貝などが入った辛い鍋。"},
+{cat:"食べ物・グルメ",q:"「보쌈」とは？",a:"ポッサム（ゆで豚サンチュ包み）",choices:["ゆで豚包み","豚の丸焼き","豚スープ","豚カルビ"],correct:0,exp:"보쌈は柔らかく茹でた豚肉をサンチュなどに包んで食べる料理。"},
+{cat:"食べ物・グルメ",q:"「족발」とは？",a:"チョッパル（豚足の煮込み）",choices:["豚足","豚バラ","豚カルビ","豚スープ"],correct:0,exp:"족발は豚足（족=足）を醤油ベースで煮込んだ料理。보쌈と一緒に出すお店が多い。"},
+{cat:"食べ物・グルメ",q:"「순대」とは？",a:"スンデ（豚の腸詰め）",choices:["腸詰め","春巻き","餃子","のり巻き"],correct:0,exp:"순대は豚の腸にもち米・血などを詰めた料理。屋台の定番。"},
+{cat:"食べ物・グルメ",q:"「떡」の意味は？",a:"トック（韓国の餅）",choices:["韓国餅","日本餅","中国餅","ご飯"],correct:0,exp:"떡は韓国の餅。떡국（餅スープ）はお正月に食べる料理。"},
+{cat:"食べ物・グルメ",q:"「라면」の意味は？",a:"ラーメン（インスタント麺）",choices:["ラーメン","うどん","そば","冷麺"],correct:0,exp:"라면は主にインスタントラーメン。봉지라면（袋麺）・컵라면（カップ麺）など。"},
+{cat:"食べ物・グルメ",q:"「반찬」の意味は？",a:"おかず・副菜",choices:["おかず","主食","ご飯","スープ"],correct:0,exp:"반찬はおかず。韓国の食事はご飯＋スープ＋반찬（小皿おかず）が基本スタイル。"},
+{cat:"食べ物・グルメ",q:"「국밥」とは？",a:"クッパ（ご飯入りスープ）",choices:["ご飯入りスープ","冷たいスープ","麺スープ","おかゆ"],correct:0,exp:"국밥は국（スープ）＋밥（ご飯）。お腹いっぱいになる庶民的な一品料理。"},
+{cat:"食べ物・グルメ",q:"「메뉴판 주세요」の意味は？",a:"メニューをください",choices:["メニューください","お会計ください","お水ください","おしぼりください"],correct:0,exp:"메뉴판（メニュー表）＋주세요（ください）。레스토랑で入店後すぐ使う表現。"},
+{cat:"食べ物・グルメ",q:"「맛없다」の意味は？",a:"まずい・おいしくない",choices:["まずい","おいしい","辛い","甘い"],correct:0,exp:"맛없다は맛（味）＋없다（ない）= まずい。対義語は맛있다（おいしい）。"},
+// ===== 交通・旅行 =====
+{cat:"交通・旅行",q:"「지하철」の意味は？",a:"地下鉄",choices:["地下鉄","バス","タクシー","電車"],correct:0,exp:"지하철は地下鉄。서울 지하철は外国人にも使いやすい交通手段。"},
+{cat:"交通・旅行",q:"「여기서 얼마나 걸려요?」の意味は？",a:"ここからどのくらいかかりますか？",choices:["どのくらいかかる","どこですか","いくらですか","どうやって行く"],correct:0,exp:"얼마나（どのくらい）＋걸려요（かかりますか）= 所要時間を聞く表現。"},
+{cat:"交通・旅行",q:"「왼쪽」の意味は？",a:"左・左側",choices:["左","右","前","後ろ"],correct:0,exp:"왼쪽は左。오른쪽（右）・앞（前）・뒤（後ろ）とセットで覚えよう。"},
+{cat:"交通・旅行",q:"「여권」の意味は？",a:"パスポート",choices:["パスポート","ビザ","航空券","切符"],correct:0,exp:"여권は旅券（パスポート）。여권을 보여 주세요（パスポートを見せてください）。"},
+{cat:"交通・旅行",q:"「어디서 내려요?」の意味は？",a:"どこで降りますか？",choices:["どこで降りる","どこで乗る","どこで待つ","どこへ行く"],correct:0,exp:"어디서（どこで）＋내려요（降りますか）。バス・電車で使う。"},
+{cat:"交通・旅行",q:"「오른쪽」の意味は？",a:"右・右側",choices:["右","左","前","後ろ"],correct:0,exp:"오른쪽は右。왼쪽（左）と対。오른쪽으로 가세요（右へ行ってください）。"},
+{cat:"交通・旅行",q:"「직진」の意味は？",a:"直進・まっすぐ",choices:["まっすぐ","左折","右折","Uターン"],correct:0,exp:"직진は直進（漢字語）。직진하세요（まっすぐ行ってください）。"},
+{cat:"交通・旅行",q:"「역」の意味は？",a:"駅",choices:["駅","空港","港","バス停"],correct:0,exp:"역は駅（漢字語：驛）。지하철역（地下鉄駅）、기차역（鉄道駅）。"},
+{cat:"交通・旅行",q:"「공항」の意味は？",a:"空港",choices:["空港","港","駅","ターミナル"],correct:0,exp:"공항は空港（漢字語：空港）。인천공항（仁川空港）はソウルの国際空港。"},
+{cat:"交通・旅行",q:"「정류장」の意味は？",a:"バス停・停留所",choices:["バス停","駅","空港","港"],correct:0,exp:"정류장はバス・タクシーの停留所。버스 정류장（バス停）。"},
+{cat:"交通・旅行",q:"「환승」の意味は？",a:"乗り換え",choices:["乗り換え","発車","到着","出発"],correct:0,exp:"환승は乗り換え（漢字語：換乘）。환승역（乗り換え駅）。"},
+{cat:"交通・旅行",q:"「출구」の意味は？",a:"出口",choices:["出口","入口","改札","乗り場"],correct:0,exp:"출구は出口（漢字語：出口）。입구（入口）と対。"},
+{cat:"交通・旅行",q:"「입구」の意味は？",a:"入口",choices:["入口","出口","通路","改札"],correct:0,exp:"입구は入口（漢字語：入口）。출구（出口）と対。"},
+{cat:"交通・旅行",q:"「예약」の意味は？",a:"予約",choices:["予約","キャンセル","確認","変更"],correct:0,exp:"예약は予約（漢字語：豫約）。예약이 있어요（予約があります）。"},
+{cat:"交通・旅行",q:"「취소」の意味は？",a:"キャンセル・取り消し",choices:["キャンセル","予約","変更","確認"],correct:0,exp:"취소はキャンセル（漢字語：取消）。예약을 취소하다（予約をキャンセルする）。"},
+{cat:"交通・旅行",q:"「영수증」の意味は？",a:"領収書・レシート",choices:["領収書","請求書","切符","保険証"],correct:0,exp:"영수증は領収書（漢字語：領收證）。영수증 주세요（レシートください）。"},
+{cat:"交通・旅行",q:"「환전」の意味は？",a:"両替",choices:["両替","送金","引き出し","支払い"],correct:0,exp:"환전は両替（漢字語：換錢）。환전할 수 있어요?（両替できますか）。"},
+{cat:"交通・旅行",q:"「택시」の意味は？",a:"タクシー",choices:["タクシー","バス","地下鉄","自転車"],correct:0,exp:"택시はタクシー（外来語）。택시 타요（タクシーに乗ります）。"},
+{cat:"交通・旅行",q:"「지도」の意味は？",a:"地図",choices:["地図","案内板","看板","パンフレット"],correct:0,exp:"지도は地図（漢字語：地圖）。지도 좀 보여 주세요（地図を見せてください）。"},
+{cat:"交通・旅行",q:"「호텔」の意味は？",a:"ホテル",choices:["ホテル","旅館","ゲストハウス","民宿"],correct:0,exp:"호텔はホテル（外来語）。호텔에 체크인할게요（ホテルにチェックインします）。"},
+{cat:"交通・旅行",q:"「체크인」の意味は？",a:"チェックイン",choices:["チェックイン","チェックアウト","予約","確認"],correct:0,exp:"체크인はチェックイン（外来語）。몇 시에 체크인해요?（何時にチェックインできますか）。"},
+{cat:"交通・旅行",q:"「체크아웃」の意味は？",a:"チェックアウト",choices:["チェックアウト","チェックイン","荷物預け","部屋変更"],correct:0,exp:"체크아웃はチェックアウト。몇 시까지예요?（何時までですか）とセットで。"},
+{cat:"交通・旅行",q:"「분실물」の意味は？",a:"落とし物・紛失物",choices:["落とし物","盗難品","壊れた物","忘れ物センター"],correct:0,exp:"분실물は紛失物（漢字語：紛失物）。분실물 센터（落とし物センター）。"},
+{cat:"交通・旅行",q:"「약국」の意味は？",a:"薬局",choices:["薬局","病院","診療所","歯医者"],correct:0,exp:"약국は薬局（漢字語：藥局）。두통약 있어요?（頭痛薬ありますか）。"},
+{cat:"交通・旅行",q:"「백화점」の意味は？",a:"デパート・百貨店",choices:["デパート","スーパー","コンビニ","市場"],correct:0,exp:"백화점は百貨店（漢字語）。롯데 백화점（ロッテ百貨店）など。"},
+{cat:"交通・旅行",q:"「면세점」の意味は？",a:"免税店",choices:["免税店","デパート","スーパー","土産店"],correct:0,exp:"면세점は免税店（漢字語：免稅店）。인천공항에 면세점이 많아요（仁川空港に免税店が多い）。"},
+{cat:"交通・旅行",q:"「박물관」の意味は？",a:"博物館",choices:["博物館","美術館","図書館","文化センター"],correct:0,exp:"박물관は博物館（漢字語）。국립박물관（国立博物館）。"},
+{cat:"交通・旅行",q:"「미술관」の意味は？",a:"美術館",choices:["美術館","博物館","劇場","映画館"],correct:0,exp:"미술관は美術館（漢字語）。미술관에서 그림을 봐요（美術館で絵を見ます）。"},
+{cat:"交通・旅行",q:"「온천」の意味は？",a:"温泉",choices:["温泉","銭湯","プール","サウナ"],correct:0,exp:"온천は温泉（漢字語：溫泉）。한국에도 온천이 있어요（韓国にも温泉があります）。"},
+{cat:"交通・旅行",q:"「배」（교통수단）の意味は？",a:"船・フェリー",choices:["船","飛行機","電車","バス"],correct:0,exp:"배は船（固有語）。배를 타요（船に乗ります）。"},
+{cat:"交通・旅行",q:"「짐」の意味は？",a:"荷物",choices:["荷物","カバン","スーツケース","財布"],correct:0,exp:"짐は荷物（固有語）。짐을 맡겨도 돼요?（荷物を預けてもいいですか）。"},
+{cat:"交通・旅行",q:"「경찰서」の意味は？",a:"警察署",choices:["警察署","消防署","大使館","税関"],correct:0,exp:"경찰서は警察署（漢字語）。도난당했어요（盗まれました）はセットで覚えよう。"},
+{cat:"交通・旅行",q:"「대사관」の意味は？",a:"大使館",choices:["大使館","領事館","政府機関","観光案内所"],correct:0,exp:"대사관は大使館（漢字語：大使館）。여권을 잃어버리면（パスポートを無くしたら）連絡する場所。"},
+{cat:"交通・旅行",q:"「관광지」の意味は？",a:"観光地",choices:["観光地","観光案内所","土産店","公園"],correct:0,exp:"관광지は観光地（漢字語：觀光地）。유명한 관광지（有名な観光地）。"},
+{cat:"交通・旅行",q:"「입장료」の意味は？",a:"入場料",choices:["入場料","交通費","食事代","宿泊費"],correct:0,exp:"입장료は入場料（漢字語：入場料）。입장료가 얼마예요?（入場料はいくらですか）。"},
+{cat:"交通・旅行",q:"「비자」の意味は？",a:"ビザ・査証",choices:["ビザ","パスポート","航空券","保険"],correct:0,exp:"비자はビザ（外来語）。한국은 일본인에게 무비자（韓国は日本人にビザ不要）。"},
+{cat:"交通・旅行",q:"「길을 잃었어요」の意味は？",a:"道に迷いました",choices:["道に迷った","遅刻した","忘れ物した","迷子になった"],correct:0,exp:"길（道）＋을 잃었어요（を失いました）= 道に迷いました。"},
+{cat:"交通・旅行",q:"「여기서 가까워요?」の意味は？",a:"ここから近いですか？",choices:["近いですか","遠いですか","何分ですか","どうやって行く"],correct:0,exp:"여기서（ここから）＋가까워요（近いですか）。가깝다（近い）・멀다（遠い）で返事が来る。"},
+{cat:"交通・旅行",q:"「표를 어디서 살 수 있어요?」の意味は？",a:"切符はどこで買えますか？",choices:["切符はどこで買える","切符はいくら","切符はどこ","切符を見せて"],correct:0,exp:"표（切符）＋어디서（どこで）＋살 수 있어요（買えますか）。"},
+{cat:"交通・旅行",q:"「시내 버스」の意味は？",a:"市内バス",choices:["市内バス","高速バス","観光バス","マウルバス"],correct:0,exp:"시내버스は市内バス（漢字語：市內）。서울 시내버스（ソウル市内バス）。"},
+{cat:"交通・旅行",q:"「고속버스」の意味は？",a:"高速バス",choices:["高速バス","市内バス","観光バス","셔틀버스"],correct:0,exp:"고속버스は高速バス。서울-부산간 고속버스（ソウル～釜山高速バス）など。"},
+{cat:"交通・旅行",q:"「놀이공원」の意味は？",a:"遊園地",choices:["遊園地","動物園","公園","水族館"],correct:0,exp:"놀이공원は遊園地。에버랜드・롯데월드などが有名。"},
+{cat:"交通・旅行",q:"「동물원」の意味は？",a:"動物園",choices:["動物園","遊園地","水族館","公園"],correct:0,exp:"동물원は動物園（漢字語：動物園）。동물원에서 사자를 봤어요（動物園でライオンを見た）。"},
+{cat:"交通・旅行",q:"「셔틀버스」の意味は？",a:"シャトルバス",choices:["シャトルバス","高速バス","市内バス","観光バス"],correct:0,exp:"셔틀버스はシャトルバス（外来語）。공항 셔틀버스（空港シャトルバス）。"},
+{cat:"交通・旅行",q:"「교통카드」の意味は？",a:"交通カード（T-money等）",choices:["交通カード","クレジットカード","会員カード","ポイントカード"],correct:0,exp:"교통카드は交通系ICカード。T-moneyが代表的で지하철・버스に使える。"},
+{cat:"交通・旅行",q:"「안내소」の意味は？",a:"案内所・インフォメーション",choices:["案内所","受付","出口","入口"],correct:0,exp:"안내소は案内所（漢字語：案內所）。관광 안내소（観光案内所）。"},
+{cat:"交通・旅行",q:"「사진을 찍어도 될까요?」の意味は？",a:"写真を撮ってもいいでしょうか？",choices:["写真を撮っていい","写真を見ていい","写真を送っていい","写真を消していい"],correct:0,exp:"사진（写真）＋찍어도 될까요（撮ってもいいでしょうか）。박물관などで使う丁寧表現。"},
+// ===== TOPIK対策 =====
+{cat:"TOPIK対策",q:"「경험」の意味は？",a:"経験",choices:["経験","記憶","感情","印象"],correct:0,exp:"경험は経験（漢字語）。TOPIK読解頻出名詞。"},
+{cat:"TOPIK対策",q:"「문화」の意味は？",a:"文化",choices:["文化","文学","言語","歴史"],correct:0,exp:"문화は文化（漢字語）。한국 문화（韓国文化）はTOPIKの頻出テーマ。"},
+{cat:"TOPIK対策",q:"「환경」の意味は？",a:"環境",choices:["環境","社会","自然","空気"],correct:0,exp:"환경は環境（漢字語）。환경 문제（環境問題）はTOPIK中〜上級頻出テーマ。"},
+{cat:"TOPIK対策",q:"「따라서」の意味は？",a:"したがって・そのため",choices:["したがって","しかし","または","そして"],correct:0,exp:"따라서は「したがって」。TOPIK読解の論理展開を示す接続語。"},
+{cat:"TOPIK対策",q:"「그러나」の意味は？",a:"しかし（逆接）",choices:["しかし","だから","そして","または"],correct:0,exp:"그러나は逆接「しかし」。TOPIK読解で論理展開を追うのに重要。"},
+{cat:"TOPIK対策",q:"「왜냐하면」の意味は？",a:"なぜなら〜",choices:["なぜなら","だから","しかし","つまり"],correct:0,exp:"왜냐하면〜기 때문이다は「なぜなら〜だから」。因果関係の表現。"},
+{cat:"TOPIK対策",q:"「결국」の意味は？",a:"結局・最終的に",choices:["結局","一般的に","たとえば","しかし"],correct:0,exp:"결국は「結局・ついに」。논설문（論説文）の締めくくりによく出る。"},
+{cat:"TOPIK対策",q:"「영향을 미치다」の意味は？",a:"影響を与える",choices:["影響を与える","影響を受ける","効果がある","関係がある"],correct:0,exp:"영향（影響）＋미치다（及ぼす）。TOPIKの論説文頻出表現。"},
+{cat:"TOPIK対策",q:"「발전하다」の意味は？",a:"発展する・発達する",choices:["発展する","減少する","変化する","停止する"],correct:0,exp:"발전하다は発展・発達する。경제가 발전하다（経済が発展）など頻出。"},
+{cat:"TOPIK対策",q:"「이에 따라」の意味は？",a:"これに伴い・それにしたがって",choices:["これに伴い","これにより改善","これとは別に","これに反して"],correct:0,exp:"이에 따라は「これに伴い」。TOPIK読解の前後関係をつなぐ重要表現。"},
+{cat:"TOPIK対策",q:"「사회」の意味は？",a:"社会",choices:["社会","経済","政治","文化"],correct:0,exp:"사회は社会（漢字語）。사회 문제（社会問題）はTOPIK頻出テーマ。"},
+{cat:"TOPIK対策",q:"「경제」の意味は？",a:"経済",choices:["経済","社会","政治","文化"],correct:0,exp:"경제は経済（漢字語）。경제 성장（経済成長）はTOPIKで頻出。"},
+{cat:"TOPIK対策",q:"「교육」の意味は？",a:"教育",choices:["教育","文化","福祉","経済"],correct:0,exp:"교육は教育（漢字語）。한국의 교육열（韓国の教育熱）はよく出るテーマ。"},
+{cat:"TOPIK対策",q:"「기술」の意味は？",a:"技術",choices:["技術","科学","情報","産業"],correct:0,exp:"기술は技術（漢字語）。기술 발전（技術の発展）。"},
+{cat:"TOPIK対策",q:"「정보」の意味は？",a:"情報",choices:["情報","知識","データ","内容"],correct:0,exp:"정보は情報（漢字語）。정보화 사회（情報化社会）はTOPIK頻出テーマ。"},
+{cat:"TOPIK対策",q:"「세대」の意味は？",a:"世代",choices:["世代","時代","年齢","年代"],correct:0,exp:"세대は世代（漢字語）。세대 갈등（世代間の葛藤）はTOPIK中〜上級の頻出テーマ。"},
+{cat:"TOPIK対策",q:"「가치관」の意味は？",a:"価値観",choices:["価値観","世界観","人生観","道徳観"],correct:0,exp:"가치관は価値観（漢字語）。가치관의 변화（価値観の変化）はTOPIKで出やすい。"},
+{cat:"TOPIK対策",q:"「변화」の意味は？",a:"変化",choices:["変化","変更","発展","発展"],correct:0,exp:"변화は変化（漢字語）。사회의 변화（社会の変化）はTOPIK頻出。"},
+{cat:"TOPIK対策",q:"「반면」の意味は？",a:"一方で・反面",choices:["一方で","したがって","しかし","そして"],correct:0,exp:"반면は「一方で・反面」。두 対比 を示すTOPIK読解で重要な接続表現。"},
+{cat:"TOPIK対策",q:"「또한」の意味は？",a:"また・さらに（添加）",choices:["また/さらに","しかし","だから","一方"],correct:0,exp:"또한は「また・さらに」。前文に情報を付け加える接続語。"},
+{cat:"TOPIK対策",q:"「즉」の意味は？",a:"つまり・すなわち",choices:["つまり","しかし","だから","さらに"],correct:0,exp:"즉は「つまり・すなわち」。前の内容を言い換える接続語。"},
+{cat:"TOPIK対策",q:"「예를 들면」の意味は？",a:"たとえば",choices:["たとえば","一般的に","結局","したがって"],correct:0,exp:"예를 들면（예를 들어）は「たとえば」。具体例を挙げるときに使う接続語。"},
+{cat:"TOPIK対策",q:"「특히」の意味は？",a:"特に・とりわけ",choices:["特に","一般に","たとえば","しかし"],correct:0,exp:"특히は「特に」。강조（強調）するときに使う副詞。"},
+{cat:"TOPIK対策",q:"「일반적으로」の意味は？",a:"一般的に",choices:["一般的に","特に","たとえば","結局"],correct:0,exp:"일반적으로は「一般的に」。통계나 경향（統計や傾向）を述べるときに使う。"},
+{cat:"TOPIK対策",q:"「최근」の意味は？",a:"最近・近年",choices:["最近","以前","将来","過去"],correct:0,exp:"최근は最近（漢字語：最近）。최근 연구에 따르면（最近の研究によると）。"},
+{cat:"TOPIK対策",q:"「다양한」の意味は？",a:"多様な・さまざまな",choices:["多様な","様々な","豊富な","独特な"],correct:0,exp:"다양한は多様な（漢字語：多様）。다양한 문화（多様な文化）。"},
+{cat:"TOPIK対策",q:"「심각하다」の意味は？",a:"深刻だ・重大だ",choices:["深刻だ","難しい","危険だ","複雑だ"],correct:0,exp:"심각하다は深刻だ（漢字語：深刻）。환경 문제가 심각해요（環境問題が深刻です）。"},
+{cat:"TOPIK対策",q:"「효과적이다」の意味は？",a:"効果的だ",choices:["効果的だ","効率的だ","効率がいい","有益だ"],correct:0,exp:"효과적이다は効果的だ（漢字語：效果的）。가장 효과적인 방법（最も効果的な方法）。"},
+{cat:"TOPIK対策",q:"「증가하다」の意味は？",a:"増加する",choices:["増加する","減少する","変化する","維持する"],correct:0,exp:"증가하다は増加する（漢字語）。인구가 증가하다（人口が増加する）。"},
+{cat:"TOPIK対策",q:"「감소하다」の意味は？",a:"減少する",choices:["減少する","増加する","停滞する","変化する"],correct:0,exp:"감소하다は減少する（漢字語）。출생률이 감소하다（出生率が減少する）。"},
+{cat:"TOPIK対策",q:"「유지하다」の意味は？",a:"維持する・保つ",choices:["維持する","保護する","改善する","管理する"],correct:0,exp:"유지하다は維持する（漢字語）。건강을 유지하다（健康を維持する）。"},
+{cat:"TOPIK対策",q:"「강조하다」の意味は？",a:"強調する",choices:["強調する","主張する","説明する","紹介する"],correct:0,exp:"강조하다は強調する（漢字語）。중요성을 강조하다（重要性を強調する）。"},
+{cat:"TOPIK対策",q:"「제안하다」の意味は？",a:"提案する",choices:["提案する","要求する","主張する","反論する"],correct:0,exp:"제안하다は提案する（漢字語）。해결책을 제안하다（解決策を提案する）。"},
+{cat:"TOPIK対策",q:"「주장하다」の意味は？",a:"主張する",choices:["主張する","質問する","答える","報告する"],correct:0,exp:"주장하다は主張する（漢字語）。논설문で筆者의 주장（筆者の主張）を問う問題が頻出。"},
+{cat:"TOPIK対策",q:"「비교하다」の意味は？",a:"比較する",choices:["比較する","分析する","評価する","選択する"],correct:0,exp:"비교하다は比較する（漢字語）。A와 B를 비교하다（AとBを比較する）。"},
+{cat:"TOPIK対策",q:"「필요하다」の意味は？",a:"必要だ",choices:["必要だ","重要だ","有益だ","適切だ"],correct:0,exp:"필요하다は必要だ（漢字語：必要）。더 많은 연구가 필요하다（より多くの研究が必要だ）。"},
+{cat:"TOPIK対策",q:"「가능하다」の意味は？",a:"可能だ",choices:["可能だ","必要だ","難しい","重要だ"],correct:0,exp:"가능하다は可能だ（漢字語：可能）。不可能は불가능하다。"},
+{cat:"TOPIK対策",q:"「전통」の意味は？",a:"伝統",choices:["伝統","現代","文化","歴史"],correct:0,exp:"전통は伝統（漢字語）。전통문화（伝統文化）はTOPIK頻出テーマ。"},
+{cat:"TOPIK対策",q:"「현대」の意味は？",a:"現代",choices:["現代","近代","古代","中世"],correct:0,exp:"현대は現代（漢字語）。현대 사회（現代社会）はTOPIK頻出。"},
+{cat:"TOPIK対策",q:"「원인」の意味は？",a:"原因",choices:["原因","結果","理由","根拠"],correct:0,exp:"원인は原因（漢字語）。원인과 결과（原因と結果）はよく対で使う。"},
+{cat:"TOPIK対策",q:"「결과」の意味は？",a:"結果",choices:["結果","原因","目標","効果"],correct:0,exp:"결과は結果（漢字語）。원인과 결과（原因と結果）。"},
+{cat:"TOPIK対策",q:"「문제점」の意味は？",a:"問題点",choices:["問題点","解決策","原因","対策"],correct:0,exp:"문제점は問題점（漢字語：問題點）。사회의 문제점（社会の問題点）。"},
+{cat:"TOPIK対策",q:"「해결책」の意味は？",a:"解決策",choices:["解決策","問題点","対策","原因"],correct:0,exp:"해결책は解決策（漢字語：解決策）。문제점에 대한 해결책（問題点に対する解決策）。"},
+{cat:"TOPIK対策",q:"「이러한」の意味は？",a:"このような・このした",choices:["このような","あのような","どのような","そのような"],correct:0,exp:"이러한は「このような」。前文の内容を受ける連体詞。TOPIK読解頻出。"},
+{cat:"TOPIK対策",q:"「중요하다」の意味は？",a:"重要だ",choices:["重要だ","必要だ","有益だ","適切だ"],correct:0,exp:"중요하다は重要だ（漢字語：重要）。가장 중요한 것은（最も重要なことは）。"},
+{cat:"TOPIK対策",q:"「과학」の意味は？",a:"科学",choices:["科学","技術","情報","産業"],correct:0,exp:"과학は科学（漢字語）。과학 기술（科学技術）はTOPIK頻出複合語。"},
+{cat:"TOPIK対策",q:"「건강」の意味は？",a:"健康",choices:["健康","医療","病気","福祉"],correct:0,exp:"건강は健康（漢字語）。건강 문제（健康問題）はTOPIKで頻出。"},
+// ===== 感情・状態 =====
+{cat:"感情・状態",q:"「기쁘다」の意味は？",a:"うれしい・喜ばしい",choices:["うれしい","悲しい","怒っている","不安"],correct:0,exp:"기쁘다はうれしい・喜ばしい。기쁜 소식（うれしいニュース）。"},
+{cat:"感情・状態",q:"「슬프다」の意味は？",a:"悲しい",choices:["悲しい","うれしい","楽しい","怖い"],correct:0,exp:"슬프다は悲しい。슬픈 영화（悲しい映画）。"},
+{cat:"感情・状態",q:"「피곤하다」の意味は？",a:"疲れている・疲れた",choices:["疲れた","眠い","忙しい","元気な"],correct:0,exp:"피곤하다は疲れた。많이 피곤해요（とても疲れました）。"},
+{cat:"感情・状態",q:"「바쁘다」の意味は？",a:"忙しい",choices:["忙しい","暇","元気","疲れた"],correct:0,exp:"바쁘다は忙しい。요즘 많이 바빠요（最近とても忙しい）。"},
+{cat:"感情・状態",q:"「건강하다」の意味は？",a:"健康だ",choices:["健康だ","病気だ","元気だ","疲れた"],correct:0,exp:"건강하다は健康だ。건강하게 지내세요（お元気でお過ごしください）は挨拶表現。"},
+{cat:"感情・状態",q:"「행복하다」の意味は？",a:"幸せだ・幸福だ",choices:["幸せだ","不幸だ","満足だ","寂しい"],correct:0,exp:"행복하다は幸せだ（漢字語：幸福）。행복한 하루（幸せな一日）。"},
+{cat:"感情・状態",q:"「불행하다」の意味は？",a:"不幸だ",choices:["不幸だ","幸せだ","悲しい","辛い"],correct:0,exp:"불행하다は不幸だ（漢字語：不幸）。행복하다（幸せ）の対義語。"},
+{cat:"感情・状態",q:"「무섭다」の意味は？",a:"怖い・恐ろしい",choices:["怖い","驚いた","不安","緊張"],correct:0,exp:"무섭다は怖い。귀신이 무서워요（幽霊が怖いです）。"},
+{cat:"感情・状態",q:"「걱정되다」の意味は？",a:"心配だ・気になる",choices:["心配だ","怖い","不安だ","悩む"],correct:0,exp:"걱정되다は心配だ（걱정＋되다）。걱정하다とも言う。"},
+{cat:"感情・状態",q:"「화가 나다」の意味は？",a:"怒る・腹が立つ",choices:["怒る","驚く","悲しむ","喜ぶ"],correct:0,exp:"화가 나다は怒る（화＝怒り、나다＝生じる）。화가 많이 났어요（とても腹が立った）。"},
+{cat:"感情・状態",q:"「놀라다」の意味は？",a:"驚く",choices:["驚く","喜ぶ","怒る","悲しむ"],correct:0,exp:"놀라다は驚く。깜짝 놀랐어요（びっくりしました）はよく使う表現。"},
+{cat:"感情・状態",q:"「창피하다」の意味は？",a:"恥ずかしい（人前で恥をかく）",choices:["恥ずかしい","照れくさい","気まずい","申し訳ない"],correct:0,exp:"창피하다は人前で恥をかく恥ずかしさ。부끄럽다との違いは対外的な恥。"},
+{cat:"感情・状態",q:"「외롭다」の意味は？",a:"寂しい・孤独だ",choices:["寂しい","恋しい","退屈","一人"],correct:0,exp:"외롭다は寂しい・孤独。외로워요（寂しいです）。"},
+{cat:"感情・状態",q:"「그립다」の意味は？",a:"懐かしい・恋しい",choices:["懐かしい/恋しい","寂しい","悲しい","惜しい"],correct:0,exp:"그립다は懐かしい・恋しい。고향이 그리워요（故郷が恋しいです）。"},
+{cat:"感情・状態",q:"「신나다」の意味は？",a:"ワクワクする・楽しい・テンションが上がる",choices:["ワクワクする","ドキドキする","うれしい","興奮する"],correct:0,exp:"신나다はテンションが上がって楽しい感じ。신나는 음악（テンションが上がる音楽）。"},
+{cat:"感情・状態",q:"「설레다」の意味は？",a:"ドキドキする（期待・期待感）",choices:["ドキドキ（期待）","緊張する","怖い","うれしい"],correct:0,exp:"설레다は期待や恋愛でドキドキする感じ。설레는 마음（ドキドキする気持ち）。"},
+{cat:"感情・状態",q:"「긴장되다」の意味は？",a:"緊張する",choices:["緊張する","不安になる","怖い","焦る"],correct:0,exp:"긴장되다は緊張する（漢字語：緊張）。発表前などに使う。"},
+{cat:"感情・状態",q:"「안심되다」の意味は？",a:"安心する",choices:["安心する","心配する","緊張する","落ち着く"],correct:0,exp:"안심되다は安心する（漢字語：安心）。다행이에요（よかった）と一緒に使うことも。"},
+{cat:"感情・状態",q:"「실망하다」の意味は？",a:"がっかりする・失望する",choices:["がっかりする","驚く","悲しむ","諦める"],correct:0,exp:"실망하다は失望する（漢字語：失望）。기대했는데 실망했어요（期待したのにがっかりした）。"},
+{cat:"感情・状態",q:"「만족하다」の意味は？",a:"満足する",choices:["満足する","不満だ","失望する","我慢する"],correct:0,exp:"만족하다は満足する（漢字語：満足）。결과에 만족해요（結果に満足しています）。"},
+{cat:"感情・状態",q:"「후회하다」の意味は？",a:"後悔する",choices:["後悔する","反省する","諦める","失望する"],correct:0,exp:"후회하다は後悔する（漢字語：後悔）。후회하지 마세요（後悔しないでください）。"},
+{cat:"感情・状態",q:"「부럽다」の意味は？",a:"うらやましい",choices:["うらやましい","悔しい","嫉妬する","ほしい"],correct:0,exp:"부럽다はうらやましい。정말 부러워요（本当にうらやましい）。"},
+{cat:"感情・状態",q:"「궁금하다」の意味は？",a:"気になる・知りたい",choices:["気になる/知りたい","心配だ","不思議だ","驚く"],correct:0,exp:"궁금하다は気になる・知りたい。궁금한 게 있어요（気になることがあります）。"},
+{cat:"感情・状態",q:"「답답하다」の意味は？",a:"もどかしい・じれったい・息苦しい",choices:["もどかしい","苦しい","辛い","焦る"],correct:0,exp:"답답하다はもどかしい・じれったい・息苦しい。답답해서 미칠 것 같아요（もどかしくて気が狂いそう）。"},
+{cat:"感情・状態",q:"「귀찮다」の意味は？",a:"面倒くさい",choices:["面倒くさい","疲れた","嫌だ","つまらない"],correct:0,exp:"귀찮다は面倒くさい。귀찮아서 못 하겠어요（面倒くさくてできない）。"},
+{cat:"感情・状態",q:"「편하다」の意味は？",a:"楽だ・快適だ",choices:["楽だ/快適","忙しい","つらい","疲れた"],correct:0,exp:"편하다は楽だ・快適だ（漢字語：便）。편한 옷（楽な服）。"},
+{cat:"感情・状態",q:"「불편하다」の意味は？",a:"不便だ・不快だ",choices:["不便/不快","便利","快適","楽"],correct:0,exp:"불편하다は不便・不快。불편한 점이 있으면（不便な点があれば）。"},
+{cat:"感情・状態",q:"「아프다」の意味は？",a:"痛い・病気だ・つらい",choices:["痛い/病気","疲れた","眠い","だるい"],correct:0,exp:"아프다は痛い・病気。어디가 아파요?（どこが痛いですか）。"},
+{cat:"感情・状態",q:"「졸리다」の意味は？",a:"眠い",choices:["眠い","疲れた","だるい","寝たい"],correct:0,exp:"졸리다は眠い。너무 졸려요（すごく眠いです）。"},
+{cat:"感情・状態",q:"「힘들다」の意味は？",a:"つらい・大変だ・しんどい",choices:["つらい/大変","難しい","疲れた","嫌だ"],correct:0,exp:"힘들다はつらい・大変。힘들어도 괜찮아요（つらくても大丈夫）。"},
+{cat:"感情・状態",q:"「괜찮다」の意味は？",a:"大丈夫だ",choices:["大丈夫","心配","だめ","無理"],correct:0,exp:"괜찮다は大丈夫。괜찮아요?（大丈夫ですか）は相手を気遣う表現。"},
+{cat:"感情・状態",q:"「이상하다」の意味は？",a:"おかしい・変だ",choices:["おかしい/変","珍しい","面白い","不思議"],correct:0,exp:"이상하다はおかしい・変だ（漢字語：異常）。이상한 소리（変な音）。"},
+{cat:"感情・状態",q:"「착하다」の意味は？",a:"優しい・良い子だ・善良だ",choices:["優しい/善良","賢い","かわいい","明るい"],correct:0,exp:"착하다は優しい・善良。착한 사람（優しい人・善良な人）。"},
+{cat:"感情・状態",q:"「나쁘다」の意味は？",a:"悪い",choices:["悪い","良い","普通","まあまあ"],correct:0,exp:"나쁘다は悪い。기분이 나빠요（気分が悪い）。"},
+{cat:"感情・状態",q:"「똑똑하다」の意味は？",a:"賢い・頭がいい",choices:["賢い","優しい","真面目","努力家"],correct:0,exp:"똑똑하다は賢い・頭がいい。똑똑한 학생（賢い学生）。"},
+{cat:"感情・状態",q:"「게으르다」の意味は？",a:"怠け者だ・ぐうたら",choices:["怠け者","のんびり","自由","楽"],correct:0,exp:"게으르다は怠け者だ。게으른 사람（怠け者）。부지런하다（勤勉）の対義語。"},
+{cat:"感情・状態",q:"「부지런하다」の意味は？",a:"勤勉だ・まめだ",choices:["勤勉だ","怠け者","真面目","忙しい"],correct:0,exp:"부지런하다は勤勉だ。부지런한 사람（まめな人）。게으르다（怠け者）の対。"},
+{cat:"感情・状態",q:"「조용하다」の意味は？",a:"静かだ",choices:["静か","うるさい","騒がしい","にぎやか"],correct:0,exp:"조용하다は静かだ。조용히 해 주세요（静かにしてください）。"},
+{cat:"感情・状態",q:"「시끄럽다」の意味は？",a:"うるさい・騒がしい",choices:["うるさい","静か","にぎやか","大きい"],correct:0,exp:"시끄럽다はうるさい・騒がしい。조용하다（静か）の対義語。"},
+{cat:"感情・状態",q:"「예쁘다」の意味は？",a:"きれいだ・かわいい",choices:["きれい/かわいい","かっこいい","美しい","素敵"],correct:0,exp:"예쁘다はきれいだ・かわいい。외모に使うことが多い。"},
+{cat:"感情・状態",q:"「멋있다」の意味は？",a:"かっこいい・素敵だ",choices:["かっこいい","かわいい","美しい","きれい"],correct:0,exp:"멋있다はかっこいい・素敵。주로 남성や物に使うが女性にも使える。"},
+{cat:"感情・状態",q:"「귀엽다」の意味は？",a:"可愛い（小さくてかわいい）",choices:["可愛い（小さくかわいい）","美しい","かっこいい","素敵"],correct:0,exp:"귀엽다は小動物・子供・小さなものへのかわいさ。예쁘다より幼い可愛さ。"},
+{cat:"感情・状態",q:"「심심하다」の意味は？",a:"退屈だ・暇だ",choices:["退屈/暇","寂しい","つまらない","眠い"],correct:0,exp:"심심하다は退屈・暇。심심해서 뭐 해요?（暇で何してますか）。"},
+{cat:"感情・状態",q:"「지루하다」の意味は？",a:"退屈だ（飽きる感じ）",choices:["飽きる退屈","暇な退屈","寂しい","面倒くさい"],correct:0,exp:"지루하다は飽きる・退屈。수업이 지루해요（授業が退屈です）。심심하다との違いは飽きる感覚。"},
+{cat:"感情・状態",q:"「어지럽다」の意味は？",a:"めまいがする・目が回る",choices:["めまいがする","眠い","頭が痛い","気分が悪い"],correct:0,exp:"어지럽다はめまいがする。어지러워요（めまいがします）。"},
+{cat:"感情・状態",q:"「배고프다」の意味は？",a:"お腹が空いた",choices:["お腹が空いた","お腹が痛い","食べたい","空腹じゃない"],correct:0,exp:"배고프다はお腹が空いた（배=お腹、고프다=空腹だ）。배불러요（満腹）と対。"},
+{cat:"感情・状態",q:"「용감하다」の意味は？",a:"勇敢だ・勇気がある",choices:["勇敢だ","強い","大胆だ","正直"],correct:0,exp:"용감하다は勇敢だ（漢字語：勇敢）。용감한 행동（勇敢な行動）。"},
+{cat:"感情・状態",q:"「부끄럽다」の意味は？",a:"恥ずかしい（照れくさい感じ）",choices:["照れ恥ずかしい","対外的に恥","申し訳ない","きまずい"],correct:0,exp:"부끄럽다は内向きの恥ずかしさ・照れ。창피하다（対外的な恥）と対比して覚えよう。"},
+{cat:"感情・状態",q:"「당연하다」の意味は？",a:"当然だ・もちろんだ",choices:["当然だ","普通だ","明らかだ","正しい"],correct:0,exp:"당연하다は当然だ（漢字語：當然）。당연하죠（当然でしょう）は相づちにも使う。"},
+{cat:"感情・状態",q:"「억울하다」の意味は？",a:"悔しい・理不尽に思う",choices:["悔しい/理不尽","悲しい","つらい","惜しい"],correct:0,exp:"억울하다は理不尽さから来る悔しさ。억울해서 눈물이 나요（悔しくて涙が出る）。"},
+// ===== 慣用表現 =====
+{cat:"慣用表現",q:"「손이 크다」の慣用的意味は？",a:"気前がいい・大盤振る舞い",choices:["気前がいい","手が大きい","仕事量が多い","力持ち"],correct:0,exp:"손이 크다は直訳「手が大きい」→慣用的に「気前がいい・大盤振る舞い」。"},
+{cat:"慣用表現",q:"「발이 넓다」の慣用的意味は？",a:"顔が広い・人脈がある",choices:["顔が広い","足が速い","歩き回る","行動力がある"],correct:0,exp:"발이 넓다は直訳「足が広い」→「人脈が広い・顔が広い」。"},
+{cat:"慣用表現",q:"「눈이 높다」の慣用的意味は？",a:"目が高い・理想が高い",choices:["理想が高い","視力がいい","見栄っ張り","観察力がある"],correct:0,exp:"눈이 높다は「理想が高い・好みが高い」。結婚相手の条件などでよく使う。"},
+{cat:"慣用表現",q:"「고생 끝에 낙이 온다」の意味は？",a:"苦あれば楽あり（苦労の後に楽がくる）",choices:["苦あれば楽あり","七転び八起き","急がば回れ","百聞は一見に如かず"],correct:0,exp:"고생（苦労）＋끝에（の後）＋낙（楽）이 온다（が来る）= 苦あれば楽あり。"},
+{cat:"慣用表現",q:"「귀가 얇다」の慣用的意味は？",a:"人の話に乗りやすい・影響されやすい",choices:["影響されやすい","耳がいい","聞き上手","秘密を守れない"],correct:0,exp:"귀가 얇다は直訳「耳が薄い」→人の話に流されやすい性格。"},
+{cat:"慣用表現",q:"「입이 무겁다」の慣用的意味は？",a:"口が重い・秘密を守る",choices:["口が重い/秘密を守る","寡黙","無口","話すのが苦手"],correct:0,exp:"입이 무겁다は「口が重い→秘密を守れる人」。입이 가볍다（口が軽い）の対。"},
+{cat:"慣用表現",q:"「입이 가볍다」の慣用的意味は？",a:"口が軽い・秘密を漏らす",choices:["口が軽い/秘密漏れ","おしゃべり","嘘をつく","悪口を言う"],correct:0,exp:"입이 가볍다は直訳「口が軽い」→秘密を言いふらす人。입이 무겁다（口が重い）の対。"},
+{cat:"慣用表現",q:"「눈코 뜰 새 없다」の意味は？",a:"目が回るほど忙しい",choices:["とても忙しい","見えない","騒がしい","混乱している"],correct:0,exp:"눈코 뜰 새 없다は「目も鼻も開ける暇がないほど忙しい」の慣用표현。"},
+{cat:"慣用表現",q:"「배가 아프다」（他人のことで）の慣用的意味は？",a:"嫉妬する・妬む",choices:["嫉妬する","お腹が痛い","心配する","悲しむ"],correct:0,exp:"배가 아프다は직역「お腹が痛い」→他人の成功を妬む・嫉妬するの慣用表現。"},
+{cat:"慣用表現",q:"「머리가 좋다」の慣用的意味は？",a:"頭がいい・賢い",choices:["頭がいい","頭が大きい","判断が早い","記憶力がいい"],correct:0,exp:"머리가 좋다は「頭がいい・賢い」の慣用표현。そのままの意味でも使う。"},
+{cat:"慣用表現",q:"「눈에 띄다」の意味は？",a:"目立つ・注目される",choices:["目立つ","見える","見つける","注意する"],correct:0,exp:"눈에 띄다は직역「目に引っかかる」→目立つ・注目される。"},
+{cat:"慣用表現",q:"「바가지를 쓰다」の意味は？",a:"ぼったくられる",choices:["ぼったくられる","損をする","騙される","お金を払う"],correct:0,exp:"바가지를 쓰다は직역「ひょうたんをかぶる」→観光地などでぼったくられること。"},
+{cat:"慣用表現",q:"「식은 죽 먹기」の意味は？",a:"朝飯前・非常に簡単なこと",choices:["朝飯前（簡単）","食べ物のこと","簡単に済む","子供でもできる"],correct:0,exp:"식은 죽 먹기は직역「冷めたお粥を食べる」→非常に簡単なこと。"},
+{cat:"慣用表現",q:"「하늘의 별 따기」の意味は？",a:"至難の業・非常に難しいこと",choices:["至難の業","夢のような話","不可能なこと","珍しいこと"],correct:0,exp:"하늘의 별 따기は직역「空の星を取る」→至難の業・非常に難しいこと。"},
+{cat:"慣用表現",q:"「엎친 데 덮친 격」の意味は？",a:"泣き面に蜂・踏んだり蹴ったり",choices:["泣き面に蜂","七転び八起き","苦あれば楽あり","やり直し"],correct:0,exp:"엎친 데 덮친 격は「倒れた上にさらに押さえつけられる」→泣き面に蜂。"},
+{cat:"慣用表現",q:"「세 살 버릇 여든까지」の意味は？",a:"三つ子の魂百まで",choices:["三つ子の魂百まで","七転び八起き","石の上にも三年","急がば回れ"],correct:0,exp:"세 살（3歳）버릇（癖）여든까지（80まで）= 三つ子の魂百まで。"},
+{cat:"慣用表現",q:"「가는 말이 고와야 오는 말이 곱다」の意味は？",a:"人にやさしくすれば優しい言葉が返ってくる",choices:["人に優しくすれば返る","嘘も方便","口は禍の元","百聞は一見に如かず"],correct:0,exp:"가는 말（行く言葉）이 고와야（優しければ）오는 말（来る言葉）이 곱다（優しい）。"},
+{cat:"慣用表現",q:"「원숭이도 나무에서 떨어진다」の意味は？",a:"猿も木から落ちる（弘法も筆の誤り）",choices:["猿も木から落ちる","七転び八起き","苦あれば楽あり","早起きは三文の得"],correct:0,exp:"원숭이（猿）も 나무에서（木から）떨어진다（落ちる）= 弘法も筆の誤り。"},
+{cat:"慣用表現",q:"「티끌 모아 태산」の意味は？",a:"塵も積もれば山となる",choices:["塵も積もれば山となる","百聞は一見に如かず","急がば回れ","継続は力なり"],correct:0,exp:"티끌（塵）모아（集めれば）태산（大山）= 塵も積もれば山となる。"},
+{cat:"慣用表現",q:"「호랑이도 제 말 하면 온다」の意味は？",a:"噂をすれば影（虎も話題にすると来る）",choices:["噂をすれば影","うそつきは泥棒の始まり","口は禍の元","百聞は一見に如かず"],correct:0,exp:"호랑이（虎）も 제 말 하면（自分のことを話すと）온다（来る）= 噂をすれば影。"},
+{cat:"慣用表現",q:"「발등에 불이 떨어지다」の意味は？",a:"緊急事態になる・火の車になる",choices:["緊急事態になる","足を怪我する","急ぐ","驚く"],correct:0,exp:"발등에 불이 떨어지다は직역「足の甲に火が落ちる」→緊急事態・差し迫った状況。"},
+{cat:"慣用表現",q:"「오지랖이 넓다」の意味は？",a:"お節介だ・でしゃばりだ",choices:["お節介/でしゃばり","気前がいい","おしゃべり","心が広い"],correct:0,exp:"오지랖이 넓다は직역「前垂れが広い」→お節介・でしゃばりの慣用표현。"},
+{cat:"慣用表現",q:"「찬물을 끼얹다」の意味は？",a:"水を差す・興をそぐ",choices:["水を差す","冷たくする","邪魔する","驚かせる"],correct:0,exp:"찬물을 끼얹다は직역「冷水をかける」→盛り上がりに水を差す慣用表현。"},
+{cat:"慣用表現",q:"「죽 쒀서 개 준다」の意味は？",a:"骨折り損のくたびれ儲け",choices:["骨折り損","労多くして功少なし","無駄骨","やり損ない"],correct:0,exp:"죽（お粥）쒀서（炊いて）개（犬）준다（あげる）= 苦労して作ったのに他の人に取られること。"},
+{cat:"慣用表現",q:"「낮말은 새가 듣고 밤말은 쥐가 듣는다」の意味は？",a:"壁に耳あり障子に目あり",choices:["壁に耳あり","噂をすれば影","口は禍の元","嘘つきは泥棒の始まり"],correct:0,exp:"昼の言葉は鳥が聞き、夜の言葉はネズミが聞く→壁に耳あり障子に目あり。"},
+{cat:"慣用表現",q:"「눈이 돌아가다」の慣用的意味は？",a:"夢中になる・目が回るほど忙しい",choices:["夢中/忙しい","目が悪くなる","驚いて目を丸くする","泣く"],correct:0,exp:"눈이 돌아가다は「目が回る」→夢中になったり忙しすぎる状態を表す慣용표현。"},
+{cat:"慣用表現",q:"「코가 납작해지다」の意味は？",a:"鼻を折られる・恥をかく",choices:["恥をかく","鼻が低い","謙虚になる","負ける"],correct:0,exp:"코가 납작해지다は「鼻がつぶれる」→恥をかく・鼻を折られる慣用표현。"},
+{cat:"慣用表現",q:"「마음이 통하다」の意味は？",a:"気が合う・心が通じ合う",choices:["気が合う","理解する","仲良し","友達になる"],correct:0,exp:"마음이 통하다は「心が通じる」→気が合う・心が通じ合う状態。"},
+{cat:"慣用表現",q:"「대박」（俗語）の意味は？",a:"大ヒット・すごい！",choices:["大ヒット/すごい！","普通","失敗","期待外れ"],correct:0,exp:"대박は大ヒット・大当たり→転じて「すごい！やばい！」などの感嘆詞。"},
+{cat:"慣用表現",q:"「화이팅 / 파이팅」の意味は？",a:"頑張れ！（応援の掛け声）",choices:["頑張れ！","ありがとう！","おめでとう！","うれしい！"],correct:0,exp:"화이팅（파이팅）は「ファイト！」→韓国でよく使う응원（応援）の掛け声。"},
+{cat:"慣用表現",q:"「눈에 밟히다」の意味は？",a:"目に焼き付く・気になって仕方ない",choices:["目に焼き付く","目立つ","見かける","目を引く"],correct:0,exp:"눈에 밟히다は직역「目に踏まれる」→忘れられない・ずっと気になる慣용표현。"},
+{cat:"慣用表現",q:"「시간 가는 줄 모르다」の意味は？",a:"時間を忘れる・時間が経つのを気づかない",choices:["時間を忘れる","暇","時間通り","時間に遅れる"],correct:0,exp:"시간 가는 줄 모르다は「時間が経つのもわからない」→熱中して時間を忘れる。"},
+{cat:"慣用表現",q:"「시치미를 떼다」の意味は？",a:"知らんぷりをする・しらを切る",choices:["知らんぷり","無視する","忘れる","冷たくする"],correct:0,exp:"시치미를 떼다は「시치미をはがす」→知っているのに知らないふりをする慣용표현。"},
+{cat:"慣用表現",q:"「정들다」の意味は？",a:"情がわく・愛着が生まれる・慣れ親しむ",choices:["情がわく/愛着","好きになる","仲良くなる","馴れる"],correct:0,exp:"정들다は情（정）が生まれる→ものや人に愛着・情がわくこと。"},
+{cat:"慣用表現",q:"「급하면 우물 판다」の意味は？",a:"必要に迫られれば何でもする・窮すれば通ず",choices:["窮すれば通ず","急いては事をし損じる","必要は発明の母","苦あれば楽あり"],correct:0,exp:"급하면（急ぐときは）우물 판다（井戸を掘る）= 必要に迫られれば何でもする。"},
+{cat:"慣用表現",q:"「고집이 세다」の意味は？",a:"頑固だ・意志が強い",choices:["頑固だ","意志が強い","我慢強い","自分勝手"],correct:0,exp:"고집이 세다は고집（頑固さ・こだわり）＋세다（強い）→頑固な人に使う。"},
+{cat:"慣用表現",q:"「바람을 피우다」の意味は？",a:"浮気する",choices:["浮気する","遊びに行く","サボる","外に出る"],correct:0,exp:"바람을 피우다は直訳「風を避ける」→浮気をする慣용표현。"},
+{cat:"慣用表現",q:"「한마음이 되다」の意味は？",a:"心を一つにする・一致団結する",choices:["一致団結","仲良くなる","気が合う","協力する"],correct:0,exp:"한마음（一つの心）이 되다（になる）= 心を一つにする・団結すること。"},
+{cat:"慣用表現",q:"「마음이 넓다」の意味は？",a:"心が広い・寛大だ",choices:["心が広い","気前がいい","優しい","穏やか"],correct:0,exp:"마음이 넓다は직역「心が広い」= 寛大・包容力がある。마음이 좁다（心が狭い）の対。"},
+{cat:"慣用表現",q:"「귀에 못이 박히다」の意味は？",a:"耳にたこができる（何度も聞かされる）",choices:["耳にたこができる","よく聞こえる","聞き飽きた","聞こえない"],correct:0,exp:"귀에 못이 박히다は「耳に釘が刺さる」→何度も同じことを聞かされる慣용표현。"},
+{cat:"慣用表現",q:"「손이 빠르다」の意味は？",a:"手が速い・仕事が速い",choices:["仕事が速い","器用","手際がいい","素早い"],correct:0,exp:"손이 빠르다は직역「手が速い」= 仕事が速い・手際がよい慣용표현。"},
+{cat:"慣用表現",q:"「발이 묶이다」の意味は？",a:"足止めされる・身動きが取れない",choices:["足止めされる","疲れる","忙しい","迷子になる"],correct:0,exp:"발이 묶이다는 직역「足が縛られる」= 足止めされる・行動の自由がなくなること。"},
+{cat:"慣用表現",q:"「등을 돌리다」の意味は？",a:"背を向ける・関係を断つ",choices:["背を向ける/絶縁","無視する","離れる","諦める"],correct:0,exp:"등을 돌리다は직역「背中を向ける」→関係を断つ・背を向ける慣用表現。"},
+{cat:"慣用表現",q:"「발 벗고 나서다」の意味は？",a:"積極的に乗り出す・率先して動く",choices:["積極的に乗り出す","急いで行く","サポートする","先頭に立つ"],correct:0,exp:"발 벗고 나서다は직역「靴を脱いで出る」→積極的に一肌脱ぐ・率先して動く。"},
+{cat:"慣用表現",q:"「손을 놓다」の意味は？",a:"手を引く・諦める・やめる",choices:["手を引く/諦める","休憩する","放す","手を差し伸べる"],correct:0,exp:"손을 놓다は직역「手を放す」→仕事や関係をやめる・諦める慣용표현。"},
+{cat:"慣用表現",q:"「눈물을 머금다」の意味は？",a:"涙をこらえる",choices:["涙をこらえる","泣く","悲しむ","感動する"],correct:0,exp:"눈물을 머금다は직역「涙を含む」→今にも泣きそうな状態で我慢すること。"},
+{cat:"慣用表現",q:"「입맛이 없다」の意味は？",a:"食欲がない",choices:["食欲がない","美味しくない","嫌いな食べ物","口に合わない"],correct:0,exp:"입맛이 없다は直訳「口の味がない」→食欲がない状態。입맛이 있다（食欲がある）の対。"},
+{cat:"慣用表現",q:"「꿈도 꾸지 마라」の意味は？",a:"夢にも思うな・絶対無理だ",choices:["絶対無理だ","夢を見ないで","考えるな","期待するな"],correct:0,exp:"꿈도 꾸지 마라は직역「夢を見るな」→無理な期待をするな・絶対不可能という強調表現。"},
+{cat:"慣用表現",q:"「눈 깜짝할 사이에」の意味は？",a:"あっという間に・瞬く間に",choices:["あっという間に","静かに","突然","徐々に"],correct:0,exp:"눈 깜짝할 사이에は直訳「まばたきする間に」→非常に短い時間を表す慣用表현。"},
+{cat:"慣用表現",q:"「목이 빠지게 기다리다」の意味は？",a:"首を長くして待つ",choices:["首を長くして待つ","じっと待つ","待ちきれない","長い間待つ"],correct:0,exp:"목이 빠지게 기다리다는 직역「首が抜けるほど待つ」→首を長くして待つ慣용표현。"},
+{cat:"食べ物・グルメ",q:"「밑반찬」の意味は？",a:"常備おかず・定番副菜",choices:["常備おかず","主食","スープ","デザート"],correct:0,exp:"밑반찬は毎食出てくる定番の小皿おかず。김치・나물・콩자반などが代表的。"},
+{cat:"食べ物・グルメ",q:"「된밥」と「진밥」の違いは？",a:"된밥=硬いご飯、진밥=柔らかいご飯",choices:["硬い/柔らかいご飯","白米/玄米","新米/古米","冷飯/温かいご飯"],correct:0,exp:"된밥は水少なめの硬めご飯、진밥は水多めの柔らかいご飯。好みに合わせて頼める。"},
+{cat:"食べ物・グルメ",q:"「국물」の意味は？",a:"スープ・汁",choices:["スープ/汁","具材","ダシ","出汁"],correct:0,exp:"국물はスープ・汁（국＋물）。국물이 시원해요（スープがさっぱりおいしい）。"},
+{cat:"食べ物・グルメ",q:"「후식」の意味は？",a:"デザート・食後のもの",choices:["デザート","前菜","おつまみ","おやつ"],correct:0,exp:"후식は後食（漢字語）= デザート・食後のもの。식후 커피（食後のコーヒー）も。"},
+{cat:"食べ物・グルメ",q:"「단골」の意味は？",a:"常連客・贔屓の店",choices:["常連/贔屓の店","新規客","行きつけ","予約客"],correct:0,exp:"단골は常連客・行きつけの店。단골 가게（お気に入りの店）、단골손님（常連客）。"},
+{cat:"交通・旅行",q:"「탑승구」の意味は？",a:"搭乗口・ゲート",choices:["搭乗口","出口","入口","乗り場"],correct:0,exp:"탑승구は搭乗口（漢字語：搭乗口）。공항에서 탑승구를 확인하세요（空港で搭乗口を確認してください）。"},
+{cat:"交通・旅行",q:"「수하물」の意味は？",a:"手荷物・預け入れ荷物",choices:["手荷物","機内持ち込み","宅配","引越し荷物"],correct:0,exp:"수하물は受託手荷物（漢字語：手荷物）。수하물 찾는 곳（バゲージクレーム）。"},
+{cat:"交通・旅行",q:"「왕복」と「편도」の意味は？",a:"往復 / 片道",choices:["往復/片道","往路/復路","直行/経由","急行/普通"],correct:0,exp:"왕복（往復）と편도（片道）はチケット購入時の必須語。왕복으로 주세요（往復でください）。"},
+{cat:"TOPIK対策",q:"「관점」の意味は？",a:"観点・視点",choices:["観点/視点","立場","意見","主張"],correct:0,exp:"관점は観点（漢字語：觀點）。筆者의 관점（筆者の観点）はTOPIK読解で頻出。"},
+{cat:"TOPIK対策",q:"「논리적으로」の意味は？",a:"論理的に",choices:["論理的に","感情的に","客観的に","主観的に"],correct:0,exp:"논리적으로は論理的に（漢字語）。TOPIK論述や読解でよく使われる副詞。"},
+{cat:"TOPIK対策",q:"「구체적으로」の意味は？",a:"具体的に",choices:["具体的に","抽象的に","一般的に","包括的に"],correct:0,exp:"구체적으로は具体的に（漢字語）。예를 들어（たとえば）と一緒に使うことが多い。"},
+];
+
+let mode='flash',currentCat='すべて',filteredQ=[],fcIndex=0,quizQ=[],quizIdx=0,correctCnt=0,wrongCnt=0,answered=false;
+const LABELS=['A','B','C','D'];
+function getCats(){const s=new Set(ALL_QUESTIONS.map(q=>q.cat));return['すべて',...s];}
+function buildCatButtons(){const w=document.getElementById('catsWrap');w.innerHTML='';getCats().forEach(c=>{const b=document.createElement('button');b.className='cat-btn'+(c===currentCat?' active':'');b.textContent=c;b.onclick=()=>{currentCat=c;buildCatButtons();resetMode();};w.appendChild(b);});}
+function getFiltered(){return currentCat==='すべて'?[...ALL_QUESTIONS]:ALL_QUESTIONS.filter(q=>q.cat===currentCat);}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function setMode(m){mode=m;document.querySelectorAll('.mode-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&m==='flash')||(i===1&&m==='quiz')));document.getElementById('flashSection').style.display=m==='flash'?'block':'none';document.getElementById('quizSection').style.display=m==='quiz'?'block':'none';resetMode();}
+function resetMode(){if(mode==='flash')initFlash();else initQuiz();}
+function initFlash(){filteredQ=getFiltered();fcIndex=0;renderCard();}
+function renderCard(){const q=filteredQ[fcIndex];document.getElementById('fcCat').textContent=q.cat;document.getElementById('fcQ').textContent=q.q;document.getElementById('fcA').textContent=q.a;document.getElementById('fcHint').textContent=q.exp;document.getElementById('cardScene').classList.remove('flipped');document.getElementById('prevBtn').disabled=fcIndex===0;document.getElementById('nextBtn').disabled=fcIndex===filteredQ.length-1;updateProgress(fcIndex+1,filteredQ.length);}
+function flipCard(){document.getElementById('cardScene').classList.toggle('flipped');}
+function prevCard(){if(fcIndex>0){fcIndex--;renderCard();}}
+function nextCard(){if(fcIndex<filteredQ.length-1){fcIndex++;renderCard();}}
+function shuffleCards(){filteredQ=shuffle(filteredQ);fcIndex=0;renderCard();}
+function initQuiz(){quizQ=shuffle(getFiltered());quizIdx=0;correctCnt=0;wrongCnt=0;document.getElementById('correctCount').textContent=0;document.getElementById('wrongCount').textContent=0;document.getElementById('resultScreen').classList.remove('show');document.getElementById('quizCard').style.display='';renderQuiz();}
+function renderQuiz(){answered=false;const q=quizQ[quizIdx];document.getElementById('qCat').textContent=q.cat;document.getElementById('qQuestion').textContent=q.q;document.getElementById('explanation').className='explanation';document.getElementById('nextQuizBtn').className='next-btn';const idxArr=shuffle([0,1,2,3]);const cd=document.getElementById('choices');cd.innerHTML='';idxArr.forEach((oi,pos)=>{const b=document.createElement('button');b.className='choice-btn';const l=document.createElement('span');l.className='label';l.textContent=LABELS[pos];const s=document.createElement('span');s.textContent=q.choices[oi];b.appendChild(l);b.appendChild(s);b.onclick=()=>{if(!answered)selectAnswer(oi,q.correct,q.exp,pos,idxArr);};cd.appendChild(b);});}
+function selectAnswer(oi,correct,exp,clickedPos,idxArr){answered=true;const btns=document.querySelectorAll('.choice-btn');idxArr.forEach((orig,pos)=>{if(orig===correct)btns[pos].classList.add('correct');});if(oi===correct){correctCnt++;document.getElementById('correctCount').textContent=correctCnt;}else{btns[clickedPos].classList.add('wrong');wrongCnt++;document.getElementById('wrongCount').textContent=wrongCnt;}btns.forEach(b=>b.disabled=true);const ed=document.getElementById('explanation');ed.textContent='💡 '+exp;ed.classList.add('show');document.getElementById('nextQuizBtn').classList.add('show');}
+function nextQuiz(){quizIdx++;if(quizIdx>=quizQ.length)showResult();else renderQuiz();}
+function showResult(){document.getElementById('quizCard').style.display='none';const pct=Math.round(correctCnt/quizQ.length*100);const sc=document.getElementById('resultScreen');sc.classList.add('show');document.getElementById('resultScore').textContent=`${pct}%（${correctCnt}/${quizQ.length}）`;let e='🎉',m='';if(pct>=90){e='🏆';m='すばらしい！완벽（完璧）に近いです！';}else if(pct>=70){e='😊';m='よくできました！もう少しで合格レベル！';}else if(pct>=50){e='💪';m='まだまだ伸びしろあり！繰り返し練習しよう！';}else{e='📚';m='復習してまた挑戦！継続は力なりです！';}document.getElementById('resultEmoji').textContent=e;document.getElementById('resultMsg').textContent=m;}
+function retryQuiz(){initQuiz();}
+function updateProgress(cur,total){const pct=total?Math.round(cur/total*100):0;document.getElementById('progressFill').style.width=pct+'%';document.getElementById('progressLabel').textContent=`${cur} / ${total}`;}
+buildCatButtons();initFlash();
+</script>
+</body>
+</html>
